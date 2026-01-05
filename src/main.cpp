@@ -30,7 +30,7 @@ int main() {
     #ifdef HAVE_REDIS
     std::cout << "✓ Redis support available" << std::endl;
     #else
-    std::cout << "✗ Redis headers not found" std::endl;
+    std::cout << "✗ Redis headers not found" << std::endl;
     #endif
     
     std::cout << "\nReady to code!" << std::endl;
