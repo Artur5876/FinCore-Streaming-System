@@ -1,0 +1,8 @@
+#pragma once
+
+#define PROJECT_NAME "@PROJECT_NAME@"
+#define PROJECT_VERSION "@PROJECT_VERSION@"
+#define PROJECT_DESCRIPTION "@PROJECT_DESCRIPTION@"
+
+#cmakedefine USE_POSTGRESQL
+#cmakedefine USE_REDIS
