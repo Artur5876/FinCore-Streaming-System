@@ -13,8 +13,8 @@ services:
   postgres:
     image: postgres:15-alpine
     environment:
-      POSTGRES_USER: developer
-      POSTGRES_PASSWORD: password
+      POSTGRES_USER: StaticGhost
+      POSTGRES_PASSWORD: myStrongPasswd123
       POSTGRES_DB: mydb
     ports:
       - "5432:5432"
