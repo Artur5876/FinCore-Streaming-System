@@ -34,4 +34,4 @@ public:
     size_t get_ask_levels() const { return asks.size(); }
     uint64_t get_total_bid_volume() const;
     uint64_t get_total_ask_volume() const;
-}
+};
