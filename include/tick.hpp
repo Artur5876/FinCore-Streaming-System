@@ -8,10 +8,11 @@ struct Tick {
     std::chrono::system_clock::time_point timestamp;
 
     //class for simulation data procidures
-    enum class Side {BID, ASK}
+    enum class Side {BID, ASK};
+    Side side;
 
     //method to determine side(based on side)
-    static Side determine_side(double price, current_mid) {
+    static Side determine_side(double price, double current_mid) {
         return price >= current_mid ? Side::ASK : Side::BID;
     }
 };
