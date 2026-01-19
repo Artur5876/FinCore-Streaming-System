@@ -1,28 +1,24 @@
-#minimum version of CMake required to run a program
 cmake_minimum_required(VERSION 3.10)
-
-#Name of the project
 project(Finantial-Data_Pipeline)
 
-#C++ version
 set(CMAKE_CXX_STANDARD 17)
 
-# You're using hiredis (C client), NOT redis++ (C++ client)
-# Find hiredis
-find_package(hiredis REQUIRED)
+# Find hiredis using pkg-config
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(HIREDIS REQUIRED hiredis)
 
 # Add executable
 add_executable(market_pipeline src/main.cpp)
 
-# Include directories - tell compiler where your headers are
+# Include directories
 target_include_directories(market_pipeline
         PRIVATE
         src
-        ${hiredis_INCLUDE_DIR}  # Add hiredis headers
+        ${HIREDIS_INCLUDE_DIRS}  # Note: HIREDIS_INCLUDE_DIRS (plural), not hiredis_INCLUDE_DIR
 )
 
 # Link libraries
 target_link_libraries(market_pipeline
         PRIVATE
-        hiredis::hiredis  # Link with hiredis library
+        ${HIREDIS_LIBRARIES}  # Use the variable from pkg_check_modules
 )
