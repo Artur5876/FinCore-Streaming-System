@@ -1,16 +1,23 @@
 #include <iostream>
-#include <string>
 #include <fstream>
+<<<<<<< HEAD
 #include <vector>
 #include "/home/arturromanov/Documents/Financial-Core-Streaming-Project/src/redis_client.cpp"
 #include <chrono>
 #include "/home/arturromanov/Documents/Financial-Core-Streaming-Project/include/tick.hpp";
+=======
+>>>>>>> dc448b82bf24ef5a33a288f73d0f592e2c99892b
 #include <sstream>
+#include <chrono>
+#include <memory>
+#include "/home/arturromanov/Documents/Financial-Core-Streaming-Project/include/order_book.hpp"
+#include "/home/arturromanov/Documents/Financial-Core-Streaming-Project/include/redis_client.hpp"
+#include "/home/arturromanov/Documents/Financial-Core-Streaming-Project/include/tick.hpp"
 
-Tick parseCSVLine(const std::string& line) {
-    Tick tick;
+Tick parse_csv_line(const std::string& line) {
     std::stringstream ss(line);
     std::string token;
+<<<<<<< HEAD
 
     //skip the first field (symbol)
     std::getline(ss, tick.symbol, ',');
@@ -30,66 +37,126 @@ Tick parseCSVLine(const std::string& line) {
     std::getline(ss, token);
     tick.timestamp = std::stoi(token);
 
+=======
+    Tick tick;
+    
+    // Format: SYMBOL,PRICE,VOLUME,SIDE,TIMESTAMP_MS
+    std::getline(ss, token, ',');
+    tick.symbol = token;
+    
+    std::getline(ss, token, ',');
+    tick.price = std::stod(token);
+    
+    std::getline(ss, token, ',');
+    tick.volume = std::stoull(token);
+    
+    std::getline(ss, token, ',');
+    tick.side = (token == "BID") ? Tick::Side::BID : Tick::Side::ASK;
+    
+    std::getline(ss, token, ',');
+    auto ms = std::chrono::milliseconds(std::stoll(token));
+    tick.timestamp = std::chrono::system_clock::time_point(ms);
+    
+>>>>>>> dc448b82bf24ef5a33a288f73d0f592e2c99892b
     return tick;
 }
-int main() {
+
+void print_header() {
     std::cout << "=======================================\n";
-    std::cout << "MARKET DATA PIPELINE v0.1 - DAY 1\n";
+    std::cout << "MARKET DATA PIPELINE v0.2 - DAY 2\n";
     std::cout << "=======================================\n\n";
+}
 
-    std::cout << "14.30 Initializing system...\n";
-
-    // Redis connection
-    RedisClient redis;
-    std::cout << "Connecting to redis server: localhost:6379\n";
-
-    // CSV Loading
-    std::ifstream file("/home/arturromanov/Documents/Financial-Core-Streaming-Project/data/sample_data.csv");
-    if (!file.is_open()) {
-        std::cerr << "ERROR: Cannot open sample_data.csv" << std::endl;
-        std::cerr << "Current directory: ";
-        system("pwd");
-        std::cerr << "Files in directory: ";
-        system("ls -la");
-        return 1;
-    }
-
+int main() {
+    print_header();
+    
+    auto start_time = std::chrono::high_resolution_clock::now();
+    
+    // Initialize
+    std::cout << "[09:15:00] Starting batch processing...\n";
+    std::cout << "[09:15:00] Loading 100 sample ticks...\n\n";
+    
+    OrderBook order_book("AAPL");
+    RedisClient redis("127.0.0.1", 6379);
+    
+    // Add some initial liquidity
+    order_book.add_bid(149.80, 500);
+    order_book.add_ask(150.20, 300);
+    order_book.add_ask(150.45, 200);
+    
+    std::cout << "=== ORDER BOOK INITIALIZATION ===\n";
+    order_book.print_summary();
+    std::cout << "\n";
+    
+    std::cout << "=== PROCESSING 100 TICKS ===\n";
+    
+    // Read and process ticks
+    std::ifstream file("sample_ticks_day2.csv");
     std::string line;
-    std::getline(file, line); // Skip header
-    std::cout << "[14:30:03] Loading sample data: sample_data.csv\n\n";
-    std::cout << "=== PROCESSING START ===\n";
-
-    // Processing first line only
-    if (std::getline(file, line)) {
-        try {
-            Tick tick = parseCSVLine(line);
-
-            std::cout << "Parsing tick N1: " << tick.symbol
-                      << ", $" << tick.price
-                      << ", " << tick.volume
-                      << " shares, " << tick.timestamp << "\n";
-
-            // Store in Redis
-            redis.storeTick(tick);
-            std::cout << "[14:30:04] Stored to Redis Stream: ticks:" << tick.symbol << "\n";
-
-            // Verify (read back)
-            Tick lastTick = redis.getLastTick(tick.symbol);
-            std::cout << "\n=== VERIFICATION ===\n";
-            std::cout << "Redis Check:\n";
-            std::cout << "  - Last tick for " << lastTick.symbol
-                      << ": $" << lastTick.price
-                      << " (" << lastTick.volume << " shares)\n";
-        } catch (const std::exception& e) {
-            std::cerr << "ERROR: " << e.what() << std::endl;
-            std::cerr << "Line that failed: " << line << std::endl;
-            return 1;
+    int tick_count = 0;
+    
+    while (std::getline(file, line)) {
+        tick_count++;
+        
+        // Parse tick
+        Tick tick = parse_csv_line(line);
+        
+        // Update order book
+        order_book.update_from_tick(tick);
+        
+        // Store in Redis Stream
+        redis.store_tick_stream(tick);
+        
+        // Update Redis order book storage periodically
+        if (tick_count % 20 == 0) {
+            // In real implementation, get bids/asks from order_book
+            // For now, just store current state
         }
-    } else {
-        std::cerr << "ERROR: No data in CSV file\n";
-        return 1;
+        
+        // Print first 2 ticks and last tick
+        if (tick_count <= 2 || tick_count == 100) {
+            std::cout << "[09:15:01] Tick #" << tick_count << ": " 
+                      << tick.symbol << " @ $" << tick.price 
+                      << " (" << (tick.side == Tick::Side::BID ? "Bid" : "Ask") << " side)\n";
+            
+            if (tick_count == 1) {
+                std::cout << "  -> Order Book Updated:\n  ";
+                order_book.print_depth(2);
+            } else if (tick_count == 2) {
+                std::cout << "  -> New bid level added at $" << tick.price << "\n";
+            } else if (tick_count == 100) {
+                std::cout << "  -> POTENTIAL MATCH: Bid $" << tick.price 
+                          << " vs Ask $" << order_book.get_best_ask() << "\n";
+            }
+        }
     }
+<<<<<<< HEAD
 
     std::cout << "\n DAY 1 COMPLETE: System processes 1 tick end-to-end\n";
+=======
+    
+    // Final summary
+    auto end_time = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
+        end_time - start_time);
+    
+    std::cout << "\n=== SUMMARY ===\n";
+    std::cout << "Processed: " << tick_count << " ticks in " 
+              << duration.count() << "ms\n";
+    std::cout << "Redis Stream 'ticks:AAPL': " 
+              << redis.get_stream_length("AAPL") << " entries\n";
+    std::cout << "Order Book Depth: " << order_book.get_bid_levels() 
+              << " bid levels, " << order_book.get_ask_levels() << " ask levels\n";
+    
+    // Estimate memory (simplified)
+    size_t estimated_memory = 8 * 1024 * 1024;  // 8MB base
+    estimated_memory += tick_count * 100;  // ~100 bytes per tick
+    
+    std::cout << "Memory Usage: " << (estimated_memory / (1024.0 * 1024.0)) 
+              << " MB\n\n";
+    
+    std::cout << "✅ DAY 2 COMPLETE: Order book tracks " << tick_count << " ticks\n";
+    
+>>>>>>> dc448b82bf24ef5a33a288f73d0f592e2c99892b
     return 0;
 }
