@@ -1,5 +1,5 @@
 #pragma once
-
+#include "/home/arturromanov/Documents/Financial-Core-Streaming-Project/src/api/alpha_vantage_client.hpp"
 #include <hiredis/hiredis.h>
 #include <string>
 #include <iostream>
@@ -10,7 +10,7 @@
 
 class RedisClient {
 private:
-    
+
     sw::redis::Redis redis;
 public:
     RedisClient(const std::string& host = "127.0.0.0", int port = 6379);
@@ -28,7 +28,7 @@ public:
     // }
 
     //Basec key-value
-    void store_tick(const std::string& key, const Tick& tick); 
+    void store_quote(const std::string& key, const AlphaVantageClient::Quote& quote);
     //     // Add colon to key for better organization
     //     std::string key = "last_tick:" + tick.symbol;
 
@@ -48,7 +48,12 @@ public:
     //     freeReplyObject(reply);
     // }
 
-    Tick get_last_tick(const std::string& symbol); 
+    AlphaVantageClient::Quote get_quote(const std::string& symbol);
+    AlphaVantageClient::Quote get_last_tick(const std::string& symbol);
+    //check if quote exists and recent(within partiular minute-range);
+    bool is_quote_recent(const std::string& symbol, int max_age_minutes);
+
+    //Tick get_last_tick(const std::string& symbol);
     //     std::string key = "last_tick:" + symbol;
     //     redisReply* reply = static_cast<redisReply*>(
     //         redisCommand(context, "GET %s", key.c_str())
@@ -83,5 +88,5 @@ public:
     void updateOrderBook(const std::string& symbol,
                         const std::map<double, uint64_t>& bids,
                         const std::map<double, uint64_t>& asks);
-    
+
 };
