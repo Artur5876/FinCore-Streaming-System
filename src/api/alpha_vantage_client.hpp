@@ -1,3 +1,4 @@
+#pragma once
 #include <iostream>
 #include <string>
 #include <sstream>
@@ -86,7 +87,7 @@ private:
         parse_json_string_field(json, "\"07. latest trading day\": \"", quote.timestamp);
 
         //previous close
-        parse_json_field(json, "\"08. previous close\": \"", quote.previous_close);
+        ////parse_json_field(json, "\"08. previous close\": \"", quote.previous_close);
 
         //Parse change
         parse_json_field(json, "\"09. change\": \"", quote.change);

@@ -2,7 +2,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <iostream>
-
+#include "/home/arturromanov/Documents/Financial-Core-Streaming-Project/src/api/alpha_vantage_client.hpp"
 //constructor with 127.0.0.1 IP address!!!
 RedisClient::RedisClient(const std::string& host, int port)
     : redis("tcp://" + host + ":" + std::to_string(port)) {
@@ -25,7 +25,7 @@ void RedisClient::store_quote(const std::string& symbol, const AlphaVantageClien
 
         //hashmap for storing quote data
         std::unordered_map<std::string, std::string> quote_data = {
-            {"symbol", std::to_string(quote.symbol)},
+            {"symbol", quote.symbol},
             {"price", std::to_string(quote.price)},
             {"open", std::to_string(quote.open)},
             {"high", std::to_string(quote.high)},
@@ -33,7 +33,7 @@ void RedisClient::store_quote(const std::string& symbol, const AlphaVantageClien
             {"volume", std::to_string(quote.volume)},
             {"change", std::to_string(quote.change)},
             {"change_percent", std::to_string(quote.change_percent)},
-            {"timestamp", std::to_string(quote.timestamp)}
+            {"timestamp", quote.timestamp}
         };
 
         //store as hash
@@ -42,7 +42,7 @@ void RedisClient::store_quote(const std::string& symbol, const AlphaVantageClien
         //also add to historical redis list-structure with timestamp
         std::string historical_key = "quote_history:" + symbol;
         std::string historical_data = quote.timestamp + ":" +
-            std::to_string(quote.price) +
+            std::to_string(quote.price) + ":" +
             std::to_string(quote.volume);
 
         redis.lpush(historical_key, historical_data);
@@ -71,7 +71,7 @@ AlphaVantageClient::Quote RedisClient::get_quote(const std::string& symbol) {
     try {
         std::string quote_key = "quote:" + symbol;
 
-        // Get all fields from hash
+        //get all fields from hash
         std::unordered_map<std::string, std::string> result;
         redis.hgetall(quote_key, std::inserter(result, result.begin()));
 
