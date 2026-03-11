@@ -1,8 +1,8 @@
-#include "/home/arturromanov/Documents/Financial-Core-Streaming-Project/include/redis_client.hpp"
+#include "/home/arturromanov/Documents/Financial-Core-Streaming-Project/include/storage/redis_client.hpp"
 #include <sstream>
 #include <stdexcept>
 #include <iostream>
-#include "/home/arturromanov/Documents/Financial-Core-Streaming-Project/src/api/alpha_vantage_client.hpp"
+#include "/home/arturromanov/Documents/Financial-Core-Streaming-Project/include/api/alpha_vantage_client.hpp"
 //constructor with 127.0.0.1 IP address!!!
 RedisClient::RedisClient(const std::string& host, int port)
     : redis("tcp://" + host + ":" + std::to_string(port)) {

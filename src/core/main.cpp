@@ -1,6 +1,6 @@
 //ctags -R .
-#include "/home/arturromanov/Documents/Financial-Core-Streaming-Project/src/api/alpha_vantage_client.hpp"
-#include "/home/arturromanov/Documents/Financial-Core-Streaming-Project/include/redis_client.hpp"
+#include "/home/arturromanov/Documents/Financial-Core-Streaming-Project/include/api/alpha_vantage_client.hpp"
+#include "/home/arturromanov/Documents/Financial-Core-Streaming-Project/include/storage/redis_client.hpp"
 #include <iostream>
 
 int main() {
@@ -68,7 +68,7 @@ int main() {
         }
 
     } catch (const std::exception& e) {
-        std::cerr << "Error: " << e.wfhat() << "\n";
+        std::cerr << "Error: " << e.what() << "\n";
         return 1;
     }
 

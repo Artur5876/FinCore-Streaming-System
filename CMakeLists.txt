@@ -12,8 +12,8 @@ pkg_check_modules(CURL libcurl)
 
 # Sources
 set(SOURCES
-        src/main.cpp
-        src/redis_client.cpp
+        src/core/main.cpp
+        src/storage/redis_client.cpp
 )
 
 # Create executable

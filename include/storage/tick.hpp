@@ -17,5 +17,3 @@ struct Tick {
         return price >= current_mid ? Side::ASK : Side::BID;
     }
 };
-
-
