@@ -58,7 +58,7 @@ private:
         FILE* pipe = popen(command.c_str(), "r");
         if(!pipe) return "";
 
-        char buffer[4096]; //error handling
+        char buffer[4096];
         std::string result;
 
         while (fgets(buffer, sizeof(buffer), pipe) != NULL) {
