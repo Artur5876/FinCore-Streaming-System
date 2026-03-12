@@ -1,19 +1,44 @@
 #pragma once
+
 #include <string>
 #include <chrono>
+#include <map>
+
+namespace fincore {
+
+//strong types for better code clarity
+using Price = double;
+using Volume = uint64_t;
+using Symbol = std::string;
+
+enum class Side { BID, ASK };
+
 struct Tick {
-    std::string symbol;
-    double price;
-    uint64_t volume;
-    // std::chrono::system_clock::time_point timestamp;
-    uint64_t timestamp;
-
-    //class for simulation data procidures
-    enum class Side {BID, ASK};
+    Symbol symbol;
+    Price price;
+    Volume volume;
     Side side;
+    std::chrono::system_clock::time_point timestamp;
 
-    //method to determine side(based on side)
-    static Side determine_side(double price, double current_mid) {
-        return price >= current_mid ? Side::ASK : Side::BID;
-    }
+    Tick(Symbol sym, Price p, Volume v, Side s)
+        : symbol(std::move(sym))
+        , price(p)
+        , volume(v)
+        , side(s)
+        , timestamp(std::chrono::system_clock::now()) {}
 };
+
+//move from alpha_vantage_client
+struct Quote {
+    Symbol symbol;
+    Price price;
+    Price open;
+    Price high;
+    Price low;
+    Volume volume;
+    double change;
+    double change_percent;
+    std::string timestamp;
+};
+
+}
