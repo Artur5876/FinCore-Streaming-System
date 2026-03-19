@@ -1,6 +1,6 @@
-#include "/home/arturromanov/Documents/Financial-Core-Streaming-Project/include/storage/redis_client.hpp"
+#include "/home/arturromanov/untitled/Financial-Core-Streaming-System/include/storage/redis_client.hpp"
 #include <sstream>
-#include "/home/arturromanov/Documents/Financial-Core-Streaming-Project/include/api/alpha_vantage_client.hpp"
+#include "/home/arturromanov/untitled/Financial-Core-Streaming-System/include/api/alpha_vantage_client.hpp"
 #include <optional>
 #include <iomanip>
 #include <map>

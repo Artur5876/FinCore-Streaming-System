@@ -1,6 +1,6 @@
-#include "api/alpha_vantage_client.hpp"
-#include "storage/redis_client.hpp"
-#include "core/order_book.hpp"
+#include "/home/arturromanov/untitled/Financial-Core-Streaming-System/include/api/alpha_vantage_client.hpp"
+#include "/home/arturromanov/untitled/Financial-Core-Streaming-System/include/storage/redis_client.hpp"
+#include "/home/arturromanov/untitled/Financial-Core-Streaming-System/include/core/order_book.hpp"
 #include <iostream>
 #include <thread>
 #include <chrono>
@@ -25,41 +25,47 @@ int main() {
 
     try {
         AlphaVantageClient av_client(api_key);
-        RedisClient redis_client("127.0.0.1", 6379);
+        fincore::RedisClient redis_client("127.0.0.1", 6379);
 
         // Create order books for each symbol
-        std::map<std::string, OrderBook> order_books;
+        std::map<std::string, std::unique_ptr<OrderBook>> order_books;
         for (const auto& symbol : symbols) {
-            order_books.emplace(symbol, OrderBook(symbol));
+            order_books.emplace(symbol, std::make_unique<fincore::OrderBook>(symbol));
         }
 
-        std::cout << "Starting real-time data feed. Press Ctrl+C to stop.\n\n";
+        std::cout << "Starting real-time data feed. Press Ctrl+Z to stop.\n\n";
 
         int iteration = 0;
         while (running) {
             std::cout << "\n--- Update " << ++iteration << " ---\n";
 
             for (const auto& symbol : symbols) {
-                auto quote = av_client.get_global_quote(symbol);
+                auto api_quote = av_client.get_global_quote(symbol);
+                Quote quote;
+                quote.price = api_quote.price;
+                quote.volume = api_quote.volume;
+                quote.symbol = Symbol(symbol);
+                quote.change_percent = api_quote.change_percent;
+
 
                 if (quote.price > 0) {
                     // sktore in Redis
                     redis_client.store_quote(symbol, quote);
 
-                    Tick tick(symbol, quote.price, quote.volume, Side::BID);
+                    Tick tick(symbol, quote.price, quote.volume, fincore::Side::BID);
 
                     //store tick in Redis Stream
                     redis_client.store_tick(tick);
 
                     // Update order book
                     auto& book = order_books.at(symbol);
-                    book.update_from_tick(tick);
+                    book->update_from_tick(tick);
 
                     //store in Redis
                     redis_client.update_order_book(
                         symbol,
-                        book.get_top_bids(5),
-                        book.get_top_asks(5)
+                        book->get_top_bids(5),
+                        book->get_top_asks(5)
                     );
 
                     //summary
@@ -75,7 +81,7 @@ int main() {
             if (iteration % 3 == 0) {
                 std::cout << "\n=== Order Book Snapshots ===\n";
                 for (const auto& [symbol, book] : order_books) {
-                    book.print_summary();
+                    book->print_summary();
                     std::cout << "\n";
                 }
             }

@@ -13,6 +13,8 @@ pkg_check_modules(CURL libcurl)
 # Sources
 set(SOURCES
         src/core/main.cpp
+        src/core/order_book.cpp
+        src/api/alpha_vantage_client.cpp
         src/storage/redis_client.cpp
 )
 
