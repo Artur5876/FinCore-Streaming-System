@@ -16,7 +16,7 @@ INSERT INTO schema_versions VALUES ('1.0.0', 'Initial fincore schema', NOW());
 
 -- REFERENCE TABLES
 -- Centralise symbol and source metadata so every time-series table can FK
--- into them instead of duplicating VARCHAR data across millions of rows.
+-- into them instead of duplicating varchar data across millions of rows.
 CREATE TABLE instruments (
     symbol              VARCHAR(10)  PRIMARY KEY,
     name                VARCHAR(100) NOT NULL,
