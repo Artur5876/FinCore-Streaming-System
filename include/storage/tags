@@ -44,6 +44,7 @@
 !_TAG_ROLE_DESCRIPTION!C++!module	imported	/imported with "imported ..."/
 !_TAG_ROLE_DESCRIPTION!C++!module	partOwner	/used for specifying a partition/
 !_TAG_ROLE_DESCRIPTION!C++!partition	imported	/imported with "imported ..."/
+<<<<<<< Updated upstream
 DbError	postgres_client.hpp	/^struct DbError {$/;"	s	namespace:fincore::db
 Instrument	postgres_client.hpp	/^struct Instrument {$/;"	s	namespace:fincore::db
 RedisClient	redis_client.hpp	/^class RedisClient {$/;"	c	namespace:fincore
@@ -61,3 +62,165 @@ redis_	redis_client.hpp	/^    std::unique_ptr<sw::redis::Redis> redis_;$/;"	m	cl
 sqlstate	postgres_client.hpp	/^    std::string sqlstate; \/\/5 digits normal$/;"	m	struct:fincore::db::DbError	typeref:typename:std::string
 symbol	postgres_client.hpp	/^    Symbol      symbol;$/;"	m	struct:fincore::db::Instrument	typeref:typename:Symbol
 tick_size_decimals	postgres_client.hpp	/^    int         tick_size_decimals{4}; \/\/default: 4(int);$/;"	m	struct:fincore::db::Instrument	typeref:typename:int
+=======
+AnalyticsRepo	postgres_client.hpp	/^class AnalyticsRepo : public Repository {$/;"	c	namespace:fincore::db
+Builder	postgres_client.hpp	/^    class Builder {$/;"	c	struct:fincore::db::ConnectionConfig
+Candle	postgres_client.hpp	/^struct Candle {$/;"	s	namespace:fincore::db
+ChunkInfo	postgres_client.hpp	/^struct ChunkInfo {$/;"	s	namespace:fincore::db
+CompressionStats	postgres_client.hpp	/^struct CompressionStats {$/;"	s	namespace:fincore::db
+ConnectionConfig	postgres_client.hpp	/^struct ConnectionConfig {$/;"	s	namespace:fincore::db
+DailyStats	postgres_client.hpp	/^struct DailyStats { std::string symbol, date; std::size_t tick_count{}; double open{}, high{}, l/;"	s	namespace:fincore::db
+DataFreshness	postgres_client.hpp	/^struct DataFreshness {$/;"	s	namespace:fincore::db
+DbError	postgres_client.hpp	/^struct DbError {$/;"	s	namespace:fincore::db
+DbResult	postgres_client.hpp	/^template <typename T> using DbResult = std::variant<T, DbError>;$/;"	t	namespace:fincore::db	typeref:typename:std::variant<T,DbError>
+HourlyBookRow	postgres_client.hpp	/^struct HourlyBookRow {$/;"	s	namespace:fincore::db
+IndicatorPoint	postgres_client.hpp	/^struct IndicatorPoint {$/;"	s	namespace:fincore::db
+IndicatorRepo	postgres_client.hpp	/^class IndicatorRepo : public Repository {$/;"	c	namespace:fincore::db
+Instrument	postgres_client.hpp	/^struct Instrument {$/;"	s	namespace:fincore::db
+InstrumentRepo	postgres_client.hpp	/^class InstrumentRepo : public Repository {$/;"	c	namespace:fincore::db
+OnTick	postgres_client.hpp	/^    using OnTick = std::function<void(const Tick&)>;$/;"	t	class:fincore::db::TickRepo
+OrderBookRepo	postgres_client.hpp	/^class OrderBookRepo : public Repository {$/;"	c	namespace:fincore::db
+Params	postgres_client.hpp	/^using Params    = std::vector<std::string>;$/;"	t	namespace:fincore::db	typeref:typename:std::vector<std::string>
+PoolStats	postgres_client.hpp	/^struct PoolStats {$/;"	s	namespace:fincore::db
+PostgresClient	postgres_client.hpp	/^class PostgresClient {$/;"	c	namespace:fincore::db
+PriceGap	postgres_client.hpp	/^struct PriceGap   { TimePoint bucket; double prev_close{}, open{}, gap_pct{}; };$/;"	s	namespace:fincore::db
+QueryStat	postgres_client.hpp	/^struct QueryStat  { std::string query; uint64_t calls{}, rows{}; double total_ms{}, mean_ms{}; }/;"	s	namespace:fincore::db
+QuoteRepo	postgres_client.hpp	/^class QuoteRepo : public Repository {$/;"	c	namespace:fincore::db
+RawResult	postgres_client.hpp	/^        RawResult(RawResult&& o) noexcept$/;"	f	struct:fincore::db::Repository::RawResult
+RawResult	postgres_client.hpp	/^    struct RawResult {$/;"	s	class:fincore::db::Repository
+RedisClient	redis_client.hpp	/^class RedisClient {$/;"	c	namespace:fincore
+Repository	postgres_client.hpp	/^class Repository {$/;"	c	namespace:fincore::db
+RowMapper	postgres_client.hpp	/^using RowMapper = std::function<void*(PGresult*, int)>;  \/\/ typed via templates below$/;"	t	namespace:fincore::db
+SpreadStats	postgres_client.hpp	/^struct SpreadStats {$/;"	s	namespace:fincore::db
+TickRepo	postgres_client.hpp	/^class TickRepo : public Repository {$/;"	c	namespace:fincore::db
+Transaction	postgres_client.hpp	/^class Transaction {$/;"	c	namespace:fincore::db
+analytics	postgres_client.hpp	/^    AnalyticsRepo&  analytics()   { return *analytics_;   }$/;"	f	class:fincore::db::PostgresClient	typeref:typename:AnalyticsRepo &
+analytics_	postgres_client.hpp	/^    std::unique_ptr<AnalyticsRepo>  analytics_;$/;"	m	class:fincore::db::PostgresClient	typeref:typename:std::unique_ptr<AnalyticsRepo>
+app_name	postgres_client.hpp	/^        Builder& app_name    (std::string v) { c_.app_name   = std::move(v); return *this; }$/;"	f	class:fincore::db::ConnectionConfig::Builder	typeref:typename:Builder &
+app_name	postgres_client.hpp	/^    std::string app_name{"fincore_cpp"};$/;"	m	struct:fincore::db::ConnectionConfig	typeref:typename:std::string
+asset_class	postgres_client.hpp	/^    std::string name, asset_class, exchange;  \/\/ asset_class: EQUITY|FOREX|CRYPTO|FUTURES|ETF$/;"	m	struct:fincore::db::Instrument	typeref:typename:std::string
+avg_imbalance	postgres_client.hpp	/^    double    avg_imbalance{}, avg_mid{};$/;"	m	struct:fincore::db::HourlyBookRow	typeref:typename:double
+avg_imbalance	postgres_client.hpp	/^    double   avg_imbalance{}, avg_mid{};$/;"	m	struct:fincore::db::SpreadStats	typeref:typename:double
+avg_latency	postgres_client.hpp	/^    std::chrono::microseconds avg_latency{};$/;"	m	struct:fincore::db::PoolStats	typeref:typename:std::chrono::microseconds
+avg_mid	postgres_client.hpp	/^    double    avg_imbalance{}, avg_mid{};$/;"	m	struct:fincore::db::HourlyBookRow	typeref:typename:double
+avg_mid	postgres_client.hpp	/^    double   avg_imbalance{}, avg_mid{};$/;"	m	struct:fincore::db::SpreadStats	typeref:typename:double
+avg_spread	postgres_client.hpp	/^    double    avg_spread{}, min_spread{}, max_spread{};$/;"	m	struct:fincore::db::HourlyBookRow	typeref:typename:double
+avg_spread	postgres_client.hpp	/^    double   avg_spread{}, min_spread{}, max_spread{};$/;"	m	struct:fincore::db::SpreadStats	typeref:typename:double
+bucket	postgres_client.hpp	/^    TimePoint bucket;                          \/\/ start of the interval$/;"	m	struct:fincore::db::Candle	typeref:typename:TimePoint
+bucket	postgres_client.hpp	/^    TimePoint bucket;$/;"	m	struct:fincore::db::HourlyBookRow	typeref:typename:TimePoint
+bucket	postgres_client.hpp	/^struct PriceGap   { TimePoint bucket; double prev_close{}, open{}, gap_pct{}; };$/;"	m	struct:fincore::db::PriceGap	typeref:typename:TimePoint
+build	postgres_client.hpp	/^        ConnectionConfig build() { return std::move(c_); }$/;"	f	class:fincore::db::ConnectionConfig::Builder	typeref:typename:ConnectionConfig
+builder	postgres_client.hpp	/^    static Builder builder() { return {}; }$/;"	f	struct:fincore::db::ConnectionConfig	typeref:typename:Builder
+busy	postgres_client.hpp	/^    std::size_t total{}, idle{}, busy{}, failed_acquisitions{};$/;"	m	struct:fincore::db::PoolStats	typeref:typename:std::size_t
+c_	postgres_client.hpp	/^        ConnectionConfig c_;$/;"	m	class:fincore::db::ConnectionConfig::Builder	typeref:typename:ConnectionConfig
+calls	postgres_client.hpp	/^struct QueryStat  { std::string query; uint64_t calls{}, rows{}; double total_ms{}, mean_ms{}; }/;"	m	struct:fincore::db::QueryStat	typeref:typename:uint64_t
+chunk_name	postgres_client.hpp	/^    std::string hypertable, chunk_name;$/;"	m	struct:fincore::db::ChunkInfo	typeref:typename:std::string
+close	postgres_client.hpp	/^    double    open{}, high{}, low{}, close{};$/;"	m	struct:fincore::db::Candle	typeref:typename:double
+close	postgres_client.hpp	/^struct DailyStats { std::string symbol, date; std::size_t tick_count{}; double open{}, high{}, l/;"	m	struct:fincore::db::DailyStats	typeref:typename:double
+compressed_bytes	postgres_client.hpp	/^    std::size_t uncompressed_bytes{}, compressed_bytes{};$/;"	m	struct:fincore::db::CompressionStats	typeref:typename:std::size_t
+compressed_chunks	postgres_client.hpp	/^    uint32_t    total_chunks{}, compressed_chunks{};$/;"	m	struct:fincore::db::CompressionStats	typeref:typename:uint32_t
+connect_timeout_s	postgres_client.hpp	/^    int         connect_timeout_s{5};$/;"	m	struct:fincore::db::ConnectionConfig	typeref:typename:int
+connection_string_	redis_client.hpp	/^    std::string connection_string_;$/;"	m	class:fincore::RedisClient	typeref:typename:std::string
+database	postgres_client.hpp	/^        Builder& database    (std::string v) { c_.dbname     = std::move(v); return *this; }$/;"	f	class:fincore::db::ConnectionConfig::Builder	typeref:typename:Builder &
+date	postgres_client.hpp	/^struct DailyStats { std::string symbol, date; std::size_t tick_count{}; double open{}, high{}, l/;"	m	struct:fincore::db::DailyStats	typeref:typename:std::string
+db	postgres_client.hpp	/^namespace fincore::db {$/;"	n	namespace:fincore
+dbname	postgres_client.hpp	/^    std::string dbname{"fincore"};$/;"	m	struct:fincore::db::ConnectionConfig	typeref:typename:std::string
+err	postgres_client.hpp	/^        DbError     err;$/;"	m	struct:fincore::db::Repository::RawResult	typeref:typename:DbError
+error_of	postgres_client.hpp	/^template <typename T> [[nodiscard]] const DbError&  error_of (const DbResult<T>& r)           { /;"	f	namespace:fincore::db	typeref:typename:const DbError &
+exchange	postgres_client.hpp	/^    std::string name, asset_class, exchange;  \/\/ asset_class: EQUITY|FOREX|CRYPTO|FUTURES|ETF$/;"	m	struct:fincore::db::Instrument	typeref:typename:std::string
+execute	postgres_client.hpp	/^    DbResult<bool> execute(const std::string& sql, const Params& params) const$/;"	f	class:fincore::db::Repository	typeref:typename:DbResult<bool>
+failed_acquisitions	postgres_client.hpp	/^    std::size_t total{}, idle{}, busy{}, failed_acquisitions{};$/;"	m	struct:fincore::db::PoolStats	typeref:typename:std::size_t
+fetch_all	postgres_client.hpp	/^    DbResult<std::vector<T>> fetch_all($/;"	f	class:fincore::db::Repository	typeref:typename:DbResult<std::vector<T>>
+fetch_one	postgres_client.hpp	/^    DbResult<std::optional<T>> fetch_one($/;"	f	class:fincore::db::Repository	typeref:typename:DbResult<std::optional<T>>
+fetch_scalar	postgres_client.hpp	/^    DbResult<T> fetch_scalar($/;"	f	class:fincore::db::Repository	typeref:typename:DbResult<T>
+fincore	postgres_client.hpp	/^namespace fincore::db {$/;"	n
+fincore	redis_client.hpp	/^namespace fincore {$/;"	n
+gap_pct	postgres_client.hpp	/^struct PriceGap   { TimePoint bucket; double prev_close{}, open{}, gap_pct{}; };$/;"	m	struct:fincore::db::PriceGap	typeref:typename:double
+high	postgres_client.hpp	/^    double    open{}, high{}, low{}, close{};$/;"	m	struct:fincore::db::Candle	typeref:typename:double
+high	postgres_client.hpp	/^struct DailyStats { std::string symbol, date; std::size_t tick_count{}; double open{}, high{}, l/;"	m	struct:fincore::db::DailyStats	typeref:typename:double
+host	postgres_client.hpp	/^        Builder& host        (std::string v) { c_.host       = std::move(v); return *this; }$/;"	f	class:fincore::db::ConnectionConfig::Builder	typeref:typename:Builder &
+host	postgres_client.hpp	/^    std::string host{"localhost"};$/;"	m	struct:fincore::db::ConnectionConfig	typeref:typename:std::string
+hypertable	postgres_client.hpp	/^    std::string hypertable, chunk_name;$/;"	m	struct:fincore::db::ChunkInfo	typeref:typename:std::string
+hypertable	postgres_client.hpp	/^    std::string hypertable;$/;"	m	struct:fincore::db::CompressionStats	typeref:typename:std::string
+idle	postgres_client.hpp	/^    std::size_t total{}, idle{}, busy{}, failed_acquisitions{};$/;"	m	struct:fincore::db::PoolStats	typeref:typename:std::size_t
+indicators	postgres_client.hpp	/^    IndicatorRepo&  indicators()  { return *indicators_;  }$/;"	f	class:fincore::db::PostgresClient	typeref:typename:IndicatorRepo &
+indicators_	postgres_client.hpp	/^    std::unique_ptr<IndicatorRepo>  indicators_;$/;"	m	class:fincore::db::PostgresClient	typeref:typename:std::unique_ptr<IndicatorRepo>
+instruments	postgres_client.hpp	/^    InstrumentRepo& instruments() { return *instruments_; }$/;"	f	class:fincore::db::PostgresClient	typeref:typename:InstrumentRepo &
+instruments_	postgres_client.hpp	/^    std::unique_ptr<InstrumentRepo> instruments_;$/;"	m	class:fincore::db::PostgresClient	typeref:typename:std::unique_ptr<InstrumentRepo>
+is_active	postgres_client.hpp	/^    bool        is_active{true};$/;"	m	struct:fincore::db::Instrument	typeref:typename:bool
+is_compressed	postgres_client.hpp	/^    bool        is_compressed{};$/;"	m	struct:fincore::db::ChunkInfo	typeref:typename:bool
+is_ok	postgres_client.hpp	/^template <typename T> [[nodiscard]] bool            is_ok    (const DbResult<T>& r) noexcept { r/;"	f	namespace:fincore::db	typeref:typename:bool
+last_indicator	postgres_client.hpp	/^    std::optional<TimePoint> last_quote, last_tick, last_snapshot, last_indicator;$/;"	m	struct:fincore::db::DataFreshness	typeref:typename:std::optional<TimePoint>
+last_quote	postgres_client.hpp	/^    std::optional<TimePoint> last_quote, last_tick, last_snapshot, last_indicator;$/;"	m	struct:fincore::db::DataFreshness	typeref:typename:std::optional<TimePoint>
+last_snapshot	postgres_client.hpp	/^    std::optional<TimePoint> last_quote, last_tick, last_snapshot, last_indicator;$/;"	m	struct:fincore::db::DataFreshness	typeref:typename:std::optional<TimePoint>
+last_tick	postgres_client.hpp	/^    std::optional<TimePoint> last_quote, last_tick, last_snapshot, last_indicator;$/;"	m	struct:fincore::db::DataFreshness	typeref:typename:std::optional<TimePoint>
+low	postgres_client.hpp	/^    double    open{}, high{}, low{}, close{};$/;"	m	struct:fincore::db::Candle	typeref:typename:double
+low	postgres_client.hpp	/^struct DailyStats { std::string symbol, date; std::size_t tick_count{}; double open{}, high{}, l/;"	m	struct:fincore::db::DailyStats	typeref:typename:double
+max_spread	postgres_client.hpp	/^    double    avg_spread{}, min_spread{}, max_spread{};$/;"	m	struct:fincore::db::HourlyBookRow	typeref:typename:double
+max_spread	postgres_client.hpp	/^    double   avg_spread{}, min_spread{}, max_spread{};$/;"	m	struct:fincore::db::SpreadStats	typeref:typename:double
+mean_ms	postgres_client.hpp	/^struct QueryStat  { std::string query; uint64_t calls{}, rows{}; double total_ms{}, mean_ms{}; }/;"	m	struct:fincore::db::QueryStat	typeref:typename:double
+message	postgres_client.hpp	/^    std::string message;$/;"	m	struct:fincore::db::DbError	typeref:typename:std::string
+min_spread	postgres_client.hpp	/^    double    avg_spread{}, min_spread{}, max_spread{};$/;"	m	struct:fincore::db::HourlyBookRow	typeref:typename:double
+min_spread	postgres_client.hpp	/^    double   avg_spread{}, min_spread{}, max_spread{};$/;"	m	struct:fincore::db::SpreadStats	typeref:typename:double
+name	postgres_client.hpp	/^    std::string name, asset_class, exchange;  \/\/ asset_class: EQUITY|FOREX|CRYPTO|FUTURES|ETF$/;"	m	struct:fincore::db::Instrument	typeref:typename:std::string
+ok	postgres_client.hpp	/^        bool        ok{false};$/;"	m	struct:fincore::db::Repository::RawResult	typeref:typename:bool
+open	postgres_client.hpp	/^    double    open{}, high{}, low{}, close{};$/;"	m	struct:fincore::db::Candle	typeref:typename:double
+open	postgres_client.hpp	/^struct DailyStats { std::string symbol, date; std::size_t tick_count{}; double open{}, high{}, l/;"	m	struct:fincore::db::DailyStats	typeref:typename:double
+open	postgres_client.hpp	/^struct PriceGap   { TimePoint bucket; double prev_close{}, open{}, gap_pct{}; };$/;"	m	struct:fincore::db::PriceGap	typeref:typename:double
+order_book	postgres_client.hpp	/^    OrderBookRepo&  order_book()  { return *order_book_;  }$/;"	f	class:fincore::db::PostgresClient	typeref:typename:OrderBookRepo &
+order_book_	postgres_client.hpp	/^    std::unique_ptr<OrderBookRepo>  order_book_;$/;"	m	class:fincore::db::PostgresClient	typeref:typename:std::unique_ptr<OrderBookRepo>
+parameters	postgres_client.hpp	/^    std::string parameters;                    \/\/ JSON, e.g. {"period":14}$/;"	m	struct:fincore::db::IndicatorPoint	typeref:typename:std::string
+password	postgres_client.hpp	/^        Builder& password    (std::string v) { c_.password   = std::move(v); return *this; }$/;"	f	class:fincore::db::ConnectionConfig::Builder	typeref:typename:Builder &
+password	postgres_client.hpp	/^    std::string password;$/;"	m	struct:fincore::db::ConnectionConfig	typeref:typename:std::string
+pool_	postgres_client.hpp	/^    std::shared_ptr<ConnectionPool> pool_;$/;"	m	class:fincore::db::PostgresClient	typeref:typename:std::shared_ptr<ConnectionPool>
+pool_	postgres_client.hpp	/^    std::shared_ptr<ConnectionPool> pool_;$/;"	m	class:fincore::db::Repository	typeref:typename:std::shared_ptr<ConnectionPool>
+pool_size	postgres_client.hpp	/^        Builder& pool_size   (int v)          { c_.pool_size  = v;            return *this; }$/;"	f	class:fincore::db::ConnectionConfig::Builder	typeref:typename:Builder &
+pool_size	postgres_client.hpp	/^    int         pool_size{8};$/;"	m	struct:fincore::db::ConnectionConfig	typeref:typename:int
+port	postgres_client.hpp	/^        Builder& port        (int v)          { c_.port       = v;            return *this; }$/;"	f	class:fincore::db::ConnectionConfig::Builder	typeref:typename:Builder &
+port	postgres_client.hpp	/^    int         port{5432};$/;"	m	struct:fincore::db::ConnectionConfig	typeref:typename:int
+prev_close	postgres_client.hpp	/^struct PriceGap   { TimePoint bucket; double prev_close{}, open{}, gap_pct{}; };$/;"	m	struct:fincore::db::PriceGap	typeref:typename:double
+queries_failed	postgres_client.hpp	/^    uint64_t    queries_ok{}, queries_failed{};$/;"	m	struct:fincore::db::PoolStats	typeref:typename:uint64_t
+queries_ok	postgres_client.hpp	/^    uint64_t    queries_ok{}, queries_failed{};$/;"	m	struct:fincore::db::PoolStats	typeref:typename:uint64_t
+query	postgres_client.hpp	/^    std::string query;      \/\/ sanitised failing query$/;"	m	struct:fincore::db::DbError	typeref:typename:std::string
+query	postgres_client.hpp	/^struct QueryStat  { std::string query; uint64_t calls{}, rows{}; double total_ms{}, mean_ms{}; }/;"	m	struct:fincore::db::QueryStat	typeref:typename:std::string
+query_timeout_ms	postgres_client.hpp	/^    int         query_timeout_ms{5000};$/;"	m	struct:fincore::db::ConnectionConfig	typeref:typename:int
+quotes	postgres_client.hpp	/^    QuoteRepo&      quotes()      { return *quotes_;      }$/;"	f	class:fincore::db::PostgresClient	typeref:typename:QuoteRepo &
+quotes_	postgres_client.hpp	/^    std::unique_ptr<QuoteRepo>      quotes_;$/;"	m	class:fincore::db::PostgresClient	typeref:typename:std::unique_ptr<QuoteRepo>
+range_end	postgres_client.hpp	/^    TimePoint   range_start, range_end;$/;"	m	struct:fincore::db::ChunkInfo	typeref:typename:TimePoint
+range_start	postgres_client.hpp	/^    TimePoint   range_start, range_end;$/;"	m	struct:fincore::db::ChunkInfo	typeref:typename:TimePoint
+ratio	postgres_client.hpp	/^    double      ratio{};$/;"	m	struct:fincore::db::CompressionStats	typeref:typename:double
+redis_	redis_client.hpp	/^    std::unique_ptr<sw::redis::Redis> redis_;$/;"	m	class:fincore::RedisClient	typeref:typename:std::unique_ptr<sw::redis::Redis>
+res	postgres_client.hpp	/^        PGresult*   res{nullptr};$/;"	m	struct:fincore::db::Repository::RawResult	typeref:typename:PGresult *
+rows	postgres_client.hpp	/^struct QueryStat  { std::string query; uint64_t calls{}, rows{}; double total_ms{}, mean_ms{}; }/;"	m	struct:fincore::db::QueryStat	typeref:typename:uint64_t
+sample_count	postgres_client.hpp	/^    uint64_t sample_count{};$/;"	m	struct:fincore::db::SpreadStats	typeref:typename:uint64_t
+size_bytes	postgres_client.hpp	/^    std::size_t size_bytes{};$/;"	m	struct:fincore::db::ChunkInfo	typeref:typename:std::size_t
+sqlstate	postgres_client.hpp	/^    std::string sqlstate;   \/\/ 5-char SQLSTATE, e.g. "23505"$/;"	m	struct:fincore::db::DbError	typeref:typename:std::string
+ssl_disabled	postgres_client.hpp	/^        Builder& ssl_disabled()               { c_.ssl_mode   = "disable";    return *this; }$/;"	f	class:fincore::db::ConnectionConfig::Builder	typeref:typename:Builder &
+ssl_mode	postgres_client.hpp	/^    std::string ssl_mode{"prefer"};    \/\/ disable|allow|prefer|require$/;"	m	struct:fincore::db::ConnectionConfig	typeref:typename:std::string
+ssl_required	postgres_client.hpp	/^        Builder& ssl_required()               { c_.ssl_mode   = "require";    return *this; }$/;"	f	class:fincore::db::ConnectionConfig::Builder	typeref:typename:Builder &
+symbol	postgres_client.hpp	/^    Symbol                   symbol;$/;"	m	struct:fincore::db::DataFreshness	typeref:typename:Symbol
+symbol	postgres_client.hpp	/^    Symbol      symbol;$/;"	m	struct:fincore::db::Instrument	typeref:typename:Symbol
+symbol	postgres_client.hpp	/^    Symbol    symbol;$/;"	m	struct:fincore::db::Candle	typeref:typename:Symbol
+symbol	postgres_client.hpp	/^    Symbol   symbol;$/;"	m	struct:fincore::db::SpreadStats	typeref:typename:Symbol
+symbol	postgres_client.hpp	/^struct DailyStats { std::string symbol, date; std::size_t tick_count{}; double open{}, high{}, l/;"	m	struct:fincore::db::DailyStats	typeref:typename:std::string
+tick_count	postgres_client.hpp	/^struct DailyStats { std::string symbol, date; std::size_t tick_count{}; double open{}, high{}, l/;"	m	struct:fincore::db::DailyStats	typeref:typename:std::size_t
+tick_size_decimals	postgres_client.hpp	/^    int         tick_size_decimals{4};$/;"	m	struct:fincore::db::Instrument	typeref:typename:int
+ticks	postgres_client.hpp	/^    TickRepo&       ticks()       { return *ticks_;       }$/;"	f	class:fincore::db::PostgresClient	typeref:typename:TickRepo &
+ticks_	postgres_client.hpp	/^    std::unique_ptr<TickRepo>       ticks_;$/;"	m	class:fincore::db::PostgresClient	typeref:typename:std::unique_ptr<TickRepo>
+timeout_ms	postgres_client.hpp	/^        Builder& timeout_ms  (int v)          { c_.query_timeout_ms = v;      return *this; }$/;"	f	class:fincore::db::ConnectionConfig::Builder	typeref:typename:Builder &
+timestamp	postgres_client.hpp	/^    TimePoint   timestamp;$/;"	m	struct:fincore::db::IndicatorPoint	typeref:typename:TimePoint
+total	postgres_client.hpp	/^    std::size_t total{}, idle{}, busy{}, failed_acquisitions{};$/;"	m	struct:fincore::db::PoolStats	typeref:typename:std::size_t
+total_chunks	postgres_client.hpp	/^    uint32_t    total_chunks{}, compressed_chunks{};$/;"	m	struct:fincore::db::CompressionStats	typeref:typename:uint32_t
+total_ms	postgres_client.hpp	/^struct QueryStat  { std::string query; uint64_t calls{}, rows{}; double total_ms{}, mean_ms{}; }/;"	m	struct:fincore::db::QueryStat	typeref:typename:double
+trade_count	postgres_client.hpp	/^    uint32_t  trade_count{};$/;"	m	struct:fincore::db::Candle	typeref:typename:uint32_t
+uncompressed_bytes	postgres_client.hpp	/^    std::size_t uncompressed_bytes{}, compressed_bytes{};$/;"	m	struct:fincore::db::CompressionStats	typeref:typename:std::size_t
+unwrap	postgres_client.hpp	/^template <typename T> [[nodiscard]] T&              unwrap   (DbResult<T>& r)                  {/;"	f	namespace:fincore::db	typeref:typename:T &
+unwrap	postgres_client.hpp	/^template <typename T> [[nodiscard]] const T&        unwrap   (const DbResult<T>& r)           { /;"	f	namespace:fincore::db	typeref:typename:const T &
+user	postgres_client.hpp	/^        Builder& user        (std::string v) { c_.user       = std::move(v); return *this; }$/;"	f	class:fincore::db::ConnectionConfig::Builder	typeref:typename:Builder &
+user	postgres_client.hpp	/^    std::string user{"fincore_app"};$/;"	m	struct:fincore::db::ConnectionConfig	typeref:typename:std::string
+value	postgres_client.hpp	/^    double      value{};$/;"	m	struct:fincore::db::IndicatorPoint	typeref:typename:double
+volume	postgres_client.hpp	/^    uint64_t  volume{};$/;"	m	struct:fincore::db::Candle	typeref:typename:uint64_t
+volume	postgres_client.hpp	/^struct DailyStats { std::string symbol, date; std::size_t tick_count{}; double open{}, high{}, l/;"	m	struct:fincore::db::DailyStats	typeref:typename:uint64_t
+vwap	postgres_client.hpp	/^struct DailyStats { std::string symbol, date; std::size_t tick_count{}; double open{}, high{}, l/;"	m	struct:fincore::db::DailyStats	typeref:typename:double
+~RawResult	postgres_client.hpp	/^        ~RawResult() { if (res) PQclear(res); }$/;"	f	struct:fincore::db::Repository::RawResult
+>>>>>>> Stashed changes
