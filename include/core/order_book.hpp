@@ -3,7 +3,7 @@
 #include <mutex>
 #include <string>
 #include <vector>
-#include "/home/arturromanov/untitled/Financial-Core-Streaming-System/include/storage/tick.hpp"
+#include "/home/arturromanov/untitled/Financial-Core-Streaming-System/include/storage/types.hpp"
 
 namespace fincore {
 class OrderBook {
@@ -26,16 +26,16 @@ public:
 
 
     void update_from_tick(const fincore::Tick& tick);
-    
+
     // Getters
     double get_best_bid() const;
     double get_best_ask() const;
     double get_spread() const;
-    
+
     // Display
     void print_summary() const;
     void print_depth(int levels = 5) const;
-    
+
     // Stats
     size_t get_bid_levels() const { return bids_.size(); }
     size_t get_ask_levels() const { return asks_.size(); }

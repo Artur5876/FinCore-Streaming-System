@@ -4,34 +4,33 @@
 //   Template Method - Repository::fetch_all/fetch_one/fetch_scalar/execute
 //                     handle the full acquire→exec→map→release lifecycle once
 //   Facade      - PostgresClient owns the pool and wires the repos together
-// =============================================================================
+//
 #pragma once
-
 #include <libpq-fe.h>
 #include <chrono>
 #include <functional>
 #include <memory>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 #include <variant>
 #include <vector>
+#include "/home/arturromanov/untitled/Financial-Core-Streaming-System/include/core/types.hpp"
 
-<<<<<<< Updated upstream
-#include "core/types.hpp"
-=======
-#include "core/types.hpp"   //Symbol,Quote,Tick,TimePoint,OrderBookSnapshot
->>>>>>> Stashed changes
 
 namespace fincore::db {
 
 //------------------------------
 //Result type
 //------------------------------
+namespace fincore::db {
+
 struct DbError {
     std::string message;
-    std::string sqlstate;
-    std::string query;
+    std::string sqlstate; //5 digits normal
+    std::string query; //failing query
 };
 
 template <typename T> using DbResult = std::variant<T, DbError>;
@@ -179,8 +178,7 @@ public:
     virtual ~Repository() = default;
 
 protected:
-    // ── Core primitive ────────────────────────────────────────────────────────
-    // RawResult: RAII wrapper for PGresult*.
+    //RawResult: RAII wrapper for PGresult*.
     // run() acquires a connection, calls PQexecParams, releases the connection,
     // and returns the result.  Templates below call run() — nothing else does.
     struct RawResult {
@@ -194,9 +192,10 @@ protected:
         RawResult(const RawResult&)       = delete;
     };
 
+    //namespace (Params)
     RawResult run(const std::string& sql, const Params& params) const;
 
-    // ── Template methods (defined inline here; call only run()) ──────────────
+    //===Template methods (defined inline here; call only run())===
 
     // Fetch N rows and map each with `mapper(PGresult*, row_index) → T`.
     template <typename T>
@@ -259,7 +258,7 @@ protected:
                                     const std::string& columns,
                                     std::string_view   tsv) const;
 
-    // ── Column helpers (use inside mapper lambdas) ────────────────────────────
+    // === Column helpers (use inside mapper lambdas) ====================
     static double      col_d  (PGresult* r, int row, int c);
     static uint64_t    col_u64(PGresult* r, int row, int c);
     static int         col_i  (PGresult* r, int row, int c);
@@ -269,7 +268,7 @@ protected:
     static std::optional<TimePoint> col_ts_opt(PGresult* r, int row, int c);
     static std::optional<double>    col_d_opt (PGresult* r, int row, int c);
 
-    // ── Timestamp / interval helpers ─────────────────────────────────────────
+    // === Timestamp / interval conversion helpers===========
     static std::string to_pg_ts      (TimePoint tp);
     static TimePoint   from_pg_ts    (const char* s);
     static std::string to_pg_interval(std::chrono::seconds s);
@@ -277,11 +276,11 @@ protected:
     std::shared_ptr<ConnectionPool> pool_;
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// § 6  Concrete repositories
-// ─────────────────────────────────────────────────────────────────────────────
+//===========================================
+//Concrete repositories
+//========================================================
 
-// ── Instruments ───────────────────────────────────────────────────────────────
+// === Instruments ==============================================
 class InstrumentRepo : public Repository {
 public:
     using Repository::Repository;
@@ -296,7 +295,7 @@ private:
     static Instrument from_row(PGresult* r, int i);
 };
 
-// ── Quotes ────────────────────────────────────────────────────────────────────
+// ===Quotes =======
 class QuoteRepo : public Repository {
 public:
     using Repository::Repository;
@@ -314,7 +313,7 @@ private:
     static std::string to_tsv  (const Symbol& sym, const Quote& q);
 };
 
-// ── Ticks ─────────────────────────────────────────────────────────────────────
+// === Ticks ==================================
 class TickRepo : public Repository {
 public:
     using Repository::Repository;
@@ -326,7 +325,7 @@ public:
     DbResult<uint64_t>           count    (const Symbol& sym, TimePoint from, TimePoint to);
     DbResult<double>             vwap     (const Symbol& sym, TimePoint from, TimePoint to);
 
-    // Candles built on-the-fly (time_bucket) or from continuous aggregate.
+    //candles built on-the-fly (time_bucket) or from continuous aggregate.
     DbResult<std::vector<Candle>> candles   (const Symbol& sym, std::chrono::seconds interval,
                                              TimePoint from, TimePoint to, std::size_t limit = 500);
     DbResult<std::vector<Candle>> daily_ohlcv(const Symbol& sym,
@@ -346,12 +345,11 @@ private:
     static std::string to_tsv     (const Tick& t);
 };
 
-// ── Order book ────────────────────────────────────────────────────────────────
+// === Order book ==================================
 class OrderBookRepo : public Repository {
 public:
     using Repository::Repository;
 
-    // Note: mid_price and spread are GENERATED columns — do not pass them.
     DbResult<bool> store(const Symbol& sym,
                          double best_bid, double best_ask,
                          double imbalance,
@@ -368,7 +366,7 @@ private:
     static HourlyBookRow     hourly_row  (PGresult* r, int i);
 };
 
-// ── Technical indicators ──────────────────────────────────────────────────────
+// === Technical indicators ====================================================
 class IndicatorRepo : public Repository {
 public:
     using Repository::Repository;
@@ -393,7 +391,7 @@ private:
                                    const IndicatorPoint& pt);
 };
 
-// ── Analytics + observability ─────────────────────────────────────────────────
+// ===Analytics + observability ===================================
 class AnalyticsRepo : public Repository {
 public:
     using Repository::Repository;
@@ -426,7 +424,7 @@ private:
     static QueryStat   stat_row   (PGresult* r, int i);
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
+//------------------------------------------
 // § 7  PostgresClient  — Facade
 //
 //   Owns the ConnectionPool and creates all repositories over it.
@@ -440,7 +438,7 @@ private:
 //         db.ticks().store(t);
 //         db.indicators().store("AAPL", "RSI", 63.1);
 //     });
-// ─────────────────────────────────────────────────────────────────────────────
+//------------------------------------------------
 class PostgresClient {
 public:
     explicit PostgresClient(ConnectionConfig cfg = {});
@@ -451,7 +449,7 @@ public:
     PostgresClient(PostgresClient&&)                 = default;
     PostgresClient& operator=(PostgresClient&&)      = default;
 
-    // ── Repository accessors ─────────────────────────────────────────────────
+    // === Repository accessors =========================
     InstrumentRepo& instruments() { return *instruments_; }
     QuoteRepo&      quotes()      { return *quotes_;      }
     TickRepo&       ticks()       { return *ticks_;       }
@@ -459,12 +457,12 @@ public:
     IndicatorRepo&  indicators()  { return *indicators_;  }
     AnalyticsRepo&  analytics()   { return *analytics_;   }
 
-    // ── Pool-level operations ────────────────────────────────────────────────
+    // === Pool-level operations ================================
     [[nodiscard]] bool      ping()       const;
     [[nodiscard]] PoolStats pool_stats() const;
     void                    reconnect();
 
-    // ── Transactions ─────────────────────────────────────────────────────────
+    // === Transactions =====================================
     [[nodiscard]] std::unique_ptr<Transaction> begin_transaction();
 
     // Runs fn() in a transaction; auto-commits on success, rolls back on throw.
@@ -486,8 +484,22 @@ private:
 }  // namespace fincore::db
 
 
-<<<<<<< Updated upstream
 }
 
-=======
->>>>>>> Stashed changes
+//asset_class[EQUITY, EXCHANGE, FUTURES OR ETFS]
+struct Instrument {
+    Symbol      symbol;
+    std::string name, asset_class, exchange;
+    int         tick_size_decimals{4}; //default: 4(int);
+    bool is_active{true};
+};
+
+
+struct Candle {
+    Symbol symbol;
+    TimePoint bucket; //start of the interval
+
+};
+
+
+
