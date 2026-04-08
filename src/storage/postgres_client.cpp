@@ -14,8 +14,6 @@ namespace fincore::db {
 //SQL constants  - keep queries out of method bodies
 namespace sql {
     // === Instruments ========================
-    namespace fincore::db {
-        namespace sql {
 
             constexpr auto kUpsertInstrument =
                 "INSERT INTO instruments (symbol,name,asset_class,exchange,tick_size_decimals,is_active) "
@@ -1024,9 +1022,5 @@ namespace sql {
             pool_->release(conn);
         }
 
-    }  // namespace fincore::db
+    }  //fincore::db
 
-
-
-}
-}
