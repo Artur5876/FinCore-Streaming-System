@@ -6,9 +6,11 @@
 //   Facade      - PostgresClient owns the pool and wires the repos together
 //
 #pragma once
-#include <libpq-fe.h>
+#include "/home/artur/Desktop/Financial-Core-Streaming-System/include/core/types.hpp"
+#include "core/types.hpp"
 #include <chrono>
 #include <functional>
+#include <libpq-fe.h>
 #include <memory>
 #include <optional>
 #include <span>
@@ -17,7 +19,6 @@
 #include <unordered_map>
 #include <variant>
 #include <vector>
-#include "/home/arturromanov/untitled/Financial-Core-Streaming-System/include/core/types.hpp"
 
 
 namespace fincore::db {

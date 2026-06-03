@@ -7,7 +7,7 @@ using namespace fincore::db;
 class QuoteRepoTest: public ::testing::Test {
 protected:
     void SetUp() override {
-        ConnectionConfig cgf;
+        fincore::db::ConnectionConfig cfg;
         cfg.host = "localhost";
         cfg.port = 5432;
         cfg.dbname = "fincore_test";
