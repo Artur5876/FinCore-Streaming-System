@@ -1,37 +1,74 @@
 #pragma once
+//Bids stored descending (best bid = highest price = begin())
+//Asks stored ascending  (best ask = lowest price = begin())
+
+
+#include "/home/artur/Desktop/Financial-Core-Streaming-System/include/storage/tick.hpp"
 #include <map>
-#include <string>
-#include <vector>
-#include "tick.hpp"
+#include <stdexcept>
+
+namespace fincore {
+    class OrderBook {
+        private:
+            Symbol symbol_;
+
+            //bids with highest price first;
+            std::map<Price, Volume, std::greater<Price>> bids_;
+            //Asks with lowest price first;
+            std::map<Price, Volume> asks_;
+
+            void remove_zero_levels(auto& map);
+        public:
+            explicit OrderBook(Symbol symbol) : symbol_(std::move(symbol)) {
+                if (symbol_.empty())
+                    throw std::invalid_argument("OrderBook: symbol must not be empty!!");
+            }
+
+        [[nodiscard]] const Symbol& symbol() const noexcept { return symbol_; }
+
+        //The number of distinct price levels on each side
+        [[nodiscard]] std::size_t bid_depth() const noexcept { return bids_.size(); }
+        [[nodiscard]] std::size_t ask_depth() const noexcept { return asks_.size(); }
+        [[nodiscard]] bool        empty()     const noexcept { return bids_.empty() && asks_.empty(); }
+
+        //MUTATIONS
+        //
+        //Set or update a price level, if volume == 0 than level will be removed
+        void set_bid(Price price, Volume volume);
+        void set_ask(Price price, Volume volume);
+
+        //Replace the entire side entirely (for convenience)
+        void replace_bids(const std::map<Price, Volume>& levels);
+        void replace_asks(const std::map<Price, Volume>& levels);
+
+        //Clear both sides
+        void clear() noexcept;
+
+        //Best prices selection
+        [[nodiscard]] std::optional<Price>  best_bid()    const noexcept;
+        [[nodiscard]] std::optional<Price>  best_ask()    const noexcept;
+        [[nodiscard]] std::optional<double> mid_price()   const noexcept;
+        [[nodiscard]] std::optional<double> spread()      const noexcept;
+
+        //Aggregaates
+        [[nodiscard]] Volume total_bid_volume() const noexcept;
+        [[nodiscard]] Volume total_ask_volume() const noexcept;
 
 
-class OrderBook {
+        //(bid_vol - ask_vol) / (bid_vol + ask_vol)  is [-1, 1]
+        //Returns 0.0 when both sides are empty.
+        [[nodiscard]] double imbalance() const noexcept;
 
-private:
-    std::string symbol;
-    std::map<double, uint64_t, std::greater<double>> bids;//descending order
-    std::map<double, uint64_t> asks;
-    double calculate_mid_price() const;
-public:
-    explicit OrderBook(const std::string& symbol);
 
-    // Core functionality
-    void add_bid(double price, uint64_t quantity);
-    void add_ask(double price, uint64_t quantity);
-    void update_from_tick(const Tick& tick);
-    
-    // Getters
-    double get_best_bid() const;
-    double get_best_ask() const;
-    double get_spread() const;
-    
-    // Display
-    void print_summary() const;
-    void print_depth(int levels = 5) const;
-    
-    // Stats
-    size_t get_bid_levels() const { return bids.size(); }
-    size_t get_ask_levels() const { return asks.size(); }
-    uint64_t get_total_bid_volume() const;
-    uint64_t get_total_ask_volume() const;
-};
+        //Snapshot
+        //an OrderBookSnapshot that is suitable for persisting to TimescaleDB / Redis
+        [[nodiscard]] OrderBookSnapShot snapshot(TimePoint at = {}) const;
+
+        //read-only access to the maps that are serialised in Redis
+        [[nodiscard]] const std::map<Price, Volume, std::greater <Price>>& bids() const noexcept{ return bids_; }
+        [[nodiscard]] const std::map<Price, Volume>& asks() const noexcept { return asks_; }
+    };
+
+
+}
+

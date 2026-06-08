@@ -10,6 +10,7 @@ namespace fincore {
 using Price = double;
 using Volume = uint64_t;
 using Symbol = std::string;
+using TimePoint = std::chrono::system_clock::time_point;
 
 enum class Side { BID, ASK };
 
@@ -41,4 +42,15 @@ struct Quote {
     std::string timestamp;
 };
 
+    struct OrderBookSnapshot {
+    Symbol symbol;
+    TimePoint snapshot_time;
+    double best_bid;
+    double best_ask;
+    double mid_price;
+    double spread;
+    Volume total_bid_vol;
+    Volume total_ask_vol;
+    double imbalance;
+};
 }
