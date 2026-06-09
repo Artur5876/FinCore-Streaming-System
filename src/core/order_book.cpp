@@ -1,112 +1,111 @@
-#include "/home/arturromanov/untitled/Financial-Core-Streaming-System/include/core/order_book.hpp"
-#include <iostream>
-#include <iomanip>
-#include <thread>
+#include "/home/artur/Desktop/Financial-Core-Streaming-System/include/core/order_book.hpp"
+#include <stdexcept>
 
 namespace fincore {
-    OrderBook::OrderBook(const std::string& sym): symbol_(sym) {};
-
-    void OrderBook::add_bid(double price, uint64_t quantity) {
-        bids_[price] += quantity;
-    }
-    void OrderBook::add_ask(double price, uint64_t quantity) {
-        asks_[price] += quantity;
-    }
-
-    double OrderBook::get_best_bid() const {
-        return bids_.empty() ? 0.0 : bids_.begin()->first;
-    }
-    double OrderBook::get_best_ask() const {
-        return asks_.empty() ? 0.0 : asks_.begin()->first;
-    }
-
-    std::map<Price, Volume> OrderBook::get_top_bids(int levels) const {
-        std::lock_guard<std::mutex> lock(mutex_);
-        std::map<Price, Volume> result;
-        int count = 0;
-        for (const auto& [price, vol] : bids_) {
-            if (count++ >= levels) break;
-            result[price] = vol;
+    void OrderBook::remove_zero_levels(auto& map) {
+        for (auto it = map.begin(); it != map.end(); ) {
+            it = (it->second == 0) ? map.erase(it) : std::next(it);
         }
-        return result;
     }
 
-    std::map<Price, Volume> OrderBook::get_top_asks(int levels) const {
-        std::lock_guard<std::mutex> lock(mutex_);
-        std::map<Price, Volume> result;
-        int count = 0;
-        for (const auto& [price, vol] : asks_) {
-            if (count++ >= levels) break;
-            result[price] = vol;
-        }
-        return result;
-    }
-
-    double OrderBook::calculate_mid_price() const {
-        if (bids_.empty() || asks_.empty()) return 0.0;
-        return (get_best_bid() + get_best_ask()) / 2.0;
-    }
-
-    void OrderBook::update_from_tick(const Tick& tick) {
-        double mid = calculate_mid_price();
-        //For simulation: if price is within 1% of mid(for both sides)
-        if (tick.side == fincore::Side::BID) {
-            add_bid(tick.price, tick.volume);
-            //also add a simulated ask (slightly higher price)
-            add_ask(tick.price * 1.001, tick.volume * 0.8);
+    //Mutations
+    void OrderBook::set_bid(Price price, Volume volume) {
+        if(price <= 0.0)
+            throw std::invalid_argument("OrderBook::set_bid: price must be > 0");
+        if(volume == 0) {
+            bids_.erase(price);
         } else {
-            add_ask(tick.price, tick.volume);
-            //simulated bid at slightly lower price
-            add_bid(tick.price * 0.999, tick.volume * 0.8);
+            bids_[price] = volume;
         }
-
     }
 
-    double OrderBook::get_spread() const  {
-        return get_best_ask() - get_best_bid();
+    void OrderBook::set_ask(Price price, Volume volume) {
+        if (price <= 0.0)
+            throw std::invalid_argument("OrderBook::set_ask: price must be > 0");
+        if (volume == 0)
+            asks_.erase(price);
+        else
+            asks_[price] = volume;
     }
 
-    void OrderBook::print_summary() const {
-        std::cout << "Symbol: " << symbol_ << "\n";
-        std::cout << "- Best Bid: $" << std::fixed << std::setprecision(2) <<
-                   get_best_bid() << " (" << (bids_.empty() ? 0 : bids_.begin()->second) << " shares)\n";
-        std::cout << "- Best Ask: $" << get_best_ask() << " (" << (asks_.empty() ? 0 : asks_.begin()->second) << " shares)\n";
-        std::cout << "- Spread: $" << get_spread() << " (" <<
-                   std::setprecision(2) << (get_spread() / get_best_bid() * 100) << "%)\n";
+    void OrderBook::replace_bids(const std::map<Price, Volume>& levels) {
+        bids_.clear();
+        for (const auto& [price, vol] : levels)
+            set_bid(price, vol);
     }
 
-    void OrderBook::print_depth(int levels) const {
-        std::cout << "\n=== " << symbol_ << " ORDER BOOK ===\n";
-
-        std::cout << "BIDS: ";
-        int count = 0;
-        for (const auto& [price, quantity] : bids_) {
-            if (++count >= levels) break;
-            std::cout << "$" << price << "(" << quantity << ")";
-        }
-        std::cout << "\nASKS: ";
-        count =0;
-        for (const auto& [price, quantity]: asks_) {
-            if (++count >= levels) break;
-            std::cout << "$" << price << "(" << quantity << ")";
-        }
-        std::cout << "\n";
+    void OrderBook::replace_asks(const std::map<Price, Volume>& levels) {
+        asks_.clear();
+        for (const auto& [price, vol] : levels)
+            set_ask(price, vol);
     }
 
-    uint64_t OrderBook::get_total_bid_volume() const {
-        uint64_t total = 0;
+    void OrderBook::clear() noexcept {
+        bids_.clear();
+        asks_.clear();
+    }
 
-        //sum ALLL bid quantities
-        for (const auto& [_, quantity] : bids_) total += quantity;
+    //Best Prices
+    std::optional<Price> OrderBook::best_bid() const noexcept {
+        if(bids_.empty()) return std::nullopt;
+        return bids_.begin()->first; //highest price first
+    }
 
+    std::optional<Price> OrderBook::best_ask() const noexcept {
+        if(asks_.empty()) return std::nullopt;
+        return asks_.begin()->first; //lowest
+    }
+
+
+    std::optional<double> OrderBook::mid_price() const noexcept {
+        auto bid = best_bid();
+        auto ask = best_ask();
+        if (!bid || !ask) return std::nullopt;
+        return (*bid + *ask) * 0.5;
+    }
+
+    std::optional<double> OrderBook::spread() const noexcept {
+        auto bid = best_bid();
+        auto ask = best_ask();
+        if (!bid || !ask) return std::nullopt;
+        return *ask - *bid;
+    }
+
+    //Aggregates
+    Volume OrderBook::total_bid_volume() const noexcept {
+        Volume total = 0;
+        for (const auto& [_, vol] : bids_) total += vol;
         return total;
     }
 
-    uint64_t OrderBook::get_total_ask_volume() const {
-        uint64_t total = 0;
-
-        //sum ALL asks quantities;
-        for (const auto& [_, quantity] : asks_) total += quantity;
+    Volume OrderBook::total_ask_volume() const noexcept {
+        Volume total = 0;
+        for (const auto& [_, vol] : asks_) total += vol;
         return total;
+    }
+
+    double OrderBook::imbalance() const noexcept {
+        const double bid_v = static_cast<double>(total_bid_volume());
+        const double ask_v = static_cast<double>(total_ask_volume());
+        const double total = bid_v + ask_v;
+        return (total == 0.0) ? 0.0 : (bid_v - ask_v) / total;
+    }
+
+    //Snapshot export
+    OrderBookSnapshot OrderBook::snapshot(TimePoint at) const {
+        OrderBookSnapshot snap;
+        snap.symbol        = symbol_;
+        snap.best_bid      = best_bid().value_or(0.0);
+        snap.best_ask      = best_ask().value_or(0.0);
+        snap.mid_price     = mid_price().value_or(0.0);
+        snap.spread        = this->spread().value_or(0.0);
+        snap.total_bid_vol = total_bid_volume();
+        snap.total_ask_vol = total_ask_volume();
+        snap.imbalance     = imbalance();
+        snap.snapshot_time = (at == TimePoint{})
+                                ? std::chrono::time_point_cast<std::chrono::microseconds>(
+                                      std::chrono::system_clock::now())
+                                : at;
+        return snap;
     }
 }
