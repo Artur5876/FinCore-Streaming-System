@@ -47,7 +47,7 @@ FetchContent_MakeAvailable(googletest)
 
 # Fixed test executable for redis_client
 add_executable(test_redis_client
-    test_redis_client.cpp
+        tests/unit/test_redis_client.cpp
 )
 target_link_libraries(test_redis_client PRIVATE
     GTest::gtest_main
