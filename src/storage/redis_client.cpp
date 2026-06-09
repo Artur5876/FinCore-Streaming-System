@@ -1,202 +1,24 @@
-#include "/home/arturromanov/untitled/Financial-Core-Streaming-System/include/storage/redis_client.hpp"
-#include <sstream>
-#include "/home/arturromanov/untitled/Financial-Core-Streaming-System/include/api/alpha_vantage_client.hpp"
-#include <optional>
+#include <chrono>
 #include <iomanip>
+#include <iostream>
 #include <map>
-
-
+#include <optional>
+#include <sstream>
+#include "include/storage/redis_client.hpp"
 namespace fincore {
-//constructor with 127.0.0.1 IP address!!!
-RedisClient::RedisClient(const std::string& host, int port)
-    : connection_string_("tcp://" + host + ":" + std::to_string(port)) {
-
-    try {
-        redis_ =  std::make_unique<sw::redis::Redis>(connection_string_);
-        //test the connection
-        redis_->ping();
-        std::cout << "[Redis] Connected to " << host << ":" << port << "\n";
-    } catch (const sw::redis::Error& e) {
-        std::cerr << "[Redis] Connection failed: " << e.what() << "\n";
-        throw;
-    }
-}
-
-bool RedisClient::store_quote(const Symbol& symbol, const Quote& quote) {
-    try {
-        //hashmap for storing quote data
-        std::unordered_map<std::string, std::string> quote_data = {
-            {"price", std::to_string(quote.price)},
-            {"open", std::to_string(quote.open)},
-            {"high", std::to_string(quote.high)},
-            {"low", std::to_string(quote.low)},
-            {"volume", std::to_string(quote.volume)},
-            {"change", std::to_string(quote.change)},
-            {"change_percent", std::to_string(quote.change_percent)},
-            {"timestamp", quote.timestamp}
-        };
-
-        //store as hash
-        redis_->hmset(quote_key(symbol), quote_data.begin(), quote_data.end());
-
-        //also add to historical redis_->list-structure with timestamp
-        std::string historical_key = "quote_history:" + symbol;
-        std::string historical_data = quote.timestamp + ":" +
-            std::to_string(quote.price) + ":" +
-            std::to_string(quote.volume);
-
-        redis_->lpush(quote_history_key(symbol), historical_data);
-        //limit: 1000 quotes in history
-        redis_->ltrim(historical_key, 0, 999);
-
-        return true;
-    } catch(const sw::redis::Error& e) {
-            std::cerr << "Error storing quote: " << e.what() << "\n";
-            return false;
-    }
-}
-
-
-
-
-//retrieve struct from Redis
-std::optional<Quote> RedisClient::get_quote(const Symbol& symbol) {
-    try {
-        //get all fields from hash
-        std::unordered_map<std::string, std::string> result;
-        redis_->hgetall(quote_key(symbol), std::inserter(result, result.begin()));
-
-        if (!result.empty()) {
-            return std::nullopt;
+    //Redis_Client construction
+    RedisClient::RedisClient(const std::string& host = "121.0.0.1", int port) : connection_string_("tcp://" + host + ";" + std::to_string(port)) {
+        try {
+            redis_ = std::make_unique<sw::redis::Redis>(connection_string_);
+            redis_->ping();
+            std::cout << "[Redis] Connected to " << host << ";" << port << "\n";
+        } catch(const sw::redis::Error& e) {
+            std::cerr << "[Redis] Connection failed: " << e.what() << "\n";
+            throw;
         }
-
-        Quote quote;
-        quote.symbol = symbol;
-
-        //safer parsing with error checking
-        auto get_double = [&](const std::string& key) -> double {
-
-            auto it = result.find(key);
-            return (it != result.end()) ? std::stoull(it->second) : 0ULL;
-        };
-
-        auto get_uint64 = [&](const std::string& key) -> uint64_t {
-            auto it = result.find(key);
-            return (it != result.end()) ? std::stoull(it->second) : 0ULL;
-        };
-
-        quote.price = get_double("price");
-        quote.open = get_double("open");
-        quote.high = get_double("high");
-        quote.low = get_double("low");
-        quote.volume = get_uint64("volume");
-        quote.change = get_double("change");
-        quote.change_percent = get_double("change_percent");
-
-        auto it = result.find("timestamp");
-        if (it != result.end()) quote.timestamp = it->second;
-
-        return quote;
-    } catch(const std::exception& e) {
-        std::cerr << "[Redis] Error parsing quote: " << e.what() << "\n";
-        return std::nullopt;
     }
-}
 
-
-bool RedisClient::store_tick(const Tick& tick) {
-    try {
-        std::unordered_map<std::string, std::string> fields = {
-            {"symbol", tick.symbol},
-            {"price", std::to_string(tick.price)},
-            {"volume", std::to_string(tick.volume)},
-            {"side", (tick.side == Side::BID) ? "BID" : "ASK"},
-            {"timestamp", std::to_string(
-                std::chrono::duration_cast<std::chrono::milliseconds>(
-                    tick.timestamp.time_since_epoch()).count())}
-        };
-
-        redis_->xadd(tick_stream_key(tick.symbol), "*", fields.begin(), fields.end());
-
-        //latest tick update
-        redis_->set("latest_tick:" + tick.symbol, std::to_string(tick.price) +
-                ":" + std::to_string(tick.volume));
-        return true;
-    } catch (const sw::redis::Error& error) {
-        std::cerr << "[Redis] Error storing tick: " << error.what() << "\n";
-        return false;
-    }
-}
-
-void RedisClient::update_order_book(const Symbol& symbol,
-                                    const std::map<Price, Volume>& bids,
-                                    const std::map<Price, Volume>& asks) {
-    try {
-        std::string bids_key = "order_book:" + symbol + ":bids";
-        std::string asks_key = "order_book:" + symbol + ":asks";
-
-        redis_->del(bids_key);
-        redis_->del(asks_key);
-
-        for (const auto& [price, volume]: bids) {
-            redis_->hset(bids_key, std::to_string(price), std::to_string(volume));
-        }
-
-        for (const auto& [price, volume] : asks) {
-            redis_->hset(asks_key, std::to_string(price), std::to_string(volume));
-        }
-
-        redis_->set("orderbook:" + symbol + ":timestamp",
-                std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(
-                        std::chrono::system_clock::now().time_since_epoch()).count()));
-    } catch (const sw::redis::Error& e) {
-        std::cerr << "[Redis] Error updating order book: " << e.what() << "\n";
-    }
-}
-
-// AlphaVantageClient::Quote RedisClient::get_last_tick(const std::string& symbol) {
-//     try {
-//         //Get data from Redis
-//         auto result = redis_->get("last_tick: " + symbol);
-//
-//         //if the data is found
-//         if (result) {
-//             //parsing the string back to Tick struct
-//             std::string data = *result;
-//             Tick tick;
-//
-//             //simple parsing data format(price, volume, side)
-//             size_t pos1 = data.find(',');
-//             size_t pos2 = data.find(',', pos1 + 1);
-//
-//             if (pos1 != std::string::npos && pos2 != std::string::npos) {
-//                 tick.price = std::stod(data.substr(0, pos1));
-//                 tick.volume = std::stoull(data.substr(pos1 + 1, pos2 - pos1 - 1));
-//                 std::string side_str = data.substr(pos2 + 1);
-//                 tick.side = (side_str == "BID") ? Tick::Side::BID : Tick::Side::ASK;
-//             }
-//             return tick;
-//         }
-//
-//     } catch(const sw::redis_->:Error& e) {
-//         std::cout << "Error getting last element from Redis: " << e.what() << "\n";
-//     }
-//
-//     return Tick{};//return empty list if nothing to return;
-// }
-// size_t RedisClient::get_stream_length(const std::string& symbol) {
-//     try {
-//         std::string stream_key = "ticks_stream";
-//
-//         //get stream length;
-//         return redis_->xlen(stream_key);
-//     } catch (const sw::redis_->:Error& e) {
-//         std::cout << "Error retriewing stream length: " << e.what() << "\n";
-//         return 0;
-//     }
-// }
-
-//Update order_book in redis_
+//connectivity check
 bool RedisClient::is_connected() const {
     try {
         redis_->ping();
@@ -206,17 +28,154 @@ bool RedisClient::is_connected() const {
     }
 }
 
-//helper-func;
-std::string RedisClient::quote_key(const Symbol& symbol) const {
-    return "quote:" + symbol;
+
+bool RedisClient::store_quote(const Symbol& symbol, const Quote& quote) {
+    try {
+        //serialization of TimePoint to microseconds since epoch
+        const int64_t ts_us = to_unix_us(quote.timestamp);
+
+        std::unordered_map<std::string, std::string> fields = {
+            {"price",      std::to_string(quote.price)},
+            {"open",       std::to_string(quote.open)},
+            {"high",       std::to_string(quote.high)},
+            {"low",        std::to_string(quote.low)},
+            {"volume",     std::to_string(quote.volume)},
+            {"change_pct", std::to_string(quote.change_pct)},
+            {"source",     quote.source},
+            {"timestamp",  std::to_string(ts_us)},
+        };
+
+        redis_->hmset(quote_key(symbol), fields.begin(), fields.end());
+
+        //Append a compact record to the history list (newest first)
+        const std::string history_entry =
+            std::to_string(ts_us) + ":" +
+            std::to_string(quote.price) + ":" +
+            std::to_string(quote.volume);
+
+        redis_->lpush(quote_history_key(symbol), history_entry);
+        redis_->ltrim(quote_history_key(symbol), 0, 999);   //keep last 1000
+
+        return true;
+    } catch (const sw::redis::Error& e) {
+        std::cerr << "[Redis] store_quote error: " << e.what() << "\n";
+        return false;
+    }
 }
 
-std::string RedisClient::quote_history_key(const Symbol& symbol) const {
+std::optional<Quote> RedisClient::get_quote(const Symbol& symbol) {
+    try{
+        std::unorderred_map<std::string, std::string> fields;
+        redis_->hgetall(quote_key(symbol), std::inserter(fields.begin(), fields.end()));
+
+        if (fields.empty()) {
+            return nullopt;
+        }
+
+        //Safe parser for double field (return 0.0 if symbol is missing)
+        auto get_double = [&] (const std::string& key) -> double {
+            auto it = fields.find(key);
+            if (it == fields.end()) return 0.0;
+            try{ return std::stod(it->second); }
+            catch(...) { return 0.0; }
+        };
+
+        auto get_int64 = [&] (const string& key) -> int64_t {
+            auto it = fields.find(key);
+            if (it == fields.end()) return 0ULL;
+            try{ return std::stoull(it->second); }
+            catch(...) { return 0ULL; }
+        };
+
+        Quote q;
+        q.symbol        = symbol;
+        q.price         = get_double("price");
+        q.open          = get_double("open");
+        q.high          = get_double("high");
+        q.low           = get_double("low");
+        q.volume        = get_double("volume");
+        q.change_pct    = get_double("change_pct");
+
+
+        //if 'source' key is available
+        if (auto it = fields.find("source"); it != fields.end())
+            q.source = it->second;
+
+        //TimePoint desirialization from microsdeconds
+        if (auto it = fields.find("timestamp"); it != fields.end()) {
+            try {
+                int64_t us = stdoll(it->second);
+                q.timestamp = TimePoint(std::chrono::microseconds(us));
+            } catch(...) { std::cout << "Timestamp is default-constructed attribute\n"; }
+        }
+
+        return q;
+    } catch(const std::exception& e) {
+        std::cerr << "[Redis] get_quote error: " << e.what() << "\n";
+        return std::nullopt;
+    }
+}
+
+//Tick struct(for high-frequency stream)
+bool RedisClient::store_tick(const Ticks& tick) {
+    try{
+        const int64_t ts_us = to_unix_us(tick.timestamp);
+        std::unorderred_map<std::string, std::string> fields = {
+            {"symbol",      tick.simbol},
+            {"price",       std::to_string(tick.price)},
+            {"size",        std::to_string(tick.size)},
+            {"side",        std::string(to_string(tick.side))},
+            {"timestamp",   std::to_string(ts_us)}
+        };
+
+        //Redis stream append
+        redis_->xadd(tick_stream_key(tick.symbol), "*", fields.begin(), fields.end());
+
+        //Cashe the very latest price for quick reads
+        redis_->set("latest_tick:" + tick.symbol,
+                  std::to_string(tick.price) + ":" + std::to_string(tick.size));
+
+        return true;
+    } catch(const sw::redis::Error& e) {
+        std::cerr << "[Redis] store_tick error: " << e.what() << "\n";
+        return false;
+    }
+
+}
+void  RedisClient::update_order_book(const Symbol& symbol,
+                                    const std::map<Price, Volume>& bids,
+                                    const std::map<Price, Volume>& asks) {
+    try{
+        const std::string bids_key = "order_book:" + symbol + ":bids";
+        const std::string asks_key = "order_book:" + symbol + ":asks";
+
+        redis_->del(bids_key);
+        redis_->del(asks_key);
+
+        for (const auto& [price, vol] : bids)
+            redis_->hset(bids_key, std::to_string(price), std::to_string(vol));
+
+        for (const auto& [price, vol] : asks)
+            redis_->hset(asks_key, std::to_string(price), std::to_string(vol));
+
+        const int64_t now_us = to_unix_us(std::chrono::system_clock::now());
+        redis_->set("order_book:" + symbol + ":timestamp", std::to_string(now_us));
+
+    } catch (const sw::redis::Error& e) {
+        std::cerr << "[Redis] update_order_book error: " << e.what() << "\n";
+    }
+}
+
+//helper-functions
+std::string RedisClient::quote_key(const Symbol& symbol) const {
+    return "quote:" +symbol;
+}
+
+std::string Redis_client::quote_history_key(const Symbol& symbol) const {
     return "quote_history:" + symbol;
 }
 
-std::string RedisClient::tick_stream_key(const Symbol& symbol) const {
-    return "ticks:" + symbol;
+std::string Redis_Client::tick_stream_key(const Symbol& symbol) const {
+        return "ticks:" + symbol;
+    }
 }
-
-};

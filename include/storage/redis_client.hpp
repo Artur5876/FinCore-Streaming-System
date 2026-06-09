@@ -22,7 +22,6 @@ public:
 
     bool store_tick(const Tick& tick);
 
-    std::vector<Tick> get_recent_ticks(const Symbol& symbol, size_t count = 100);
 
     void update_order_book(const Symbol& symbol,
                           const std::map<Price, Volume>& bids,
