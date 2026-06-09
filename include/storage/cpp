@@ -1,0 +1,12 @@
+#include "include/storare/psql_client"
+
+
+namespace fincore::db {
+
+    //SQL constants
+    namespace sql {
+        constexpr
+    }
+
+}
+
