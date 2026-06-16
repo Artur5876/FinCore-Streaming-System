@@ -1,141 +1,54 @@
 #pragma once
-#include <iostream>
+
+// Fetches market quotes from the Alpha Vantage REST API.
+
+#include "/home/artur/Desktop/Financial-Core-Streaming-System/include/storage/tick.hpp"
+#include <chrono>
+#include <optional>
 #include <string>
-#include <sstream>
-#include <iomanip>
-#include <memory>
+#include <unordered_map>
 
-class AlphaVantageClient {
-private:
-    std::string api_key_;
+namespace fincore {
 
-public:
-    AlphaVantageClient(const std::string& api_key) : api_key_(api_key) {}
+    class AlphaVantageClient {
+        private:
+            std::string             api_key_;
+            std::chrono::seconds    cache_ttl_;
+            bool                    last_was_cached_{false};
 
-    //data collection struct(package)
-    struct Quote {
-        std::string symbol;
-        double price{0.0};
-        double open{0.0};
-        double high{0.0};
-        double low{0.0};
-        long long volume{0};
-        double change{0.0};
-        double change_percent{0.0};
-        std::string timestamp;
+            struct CacheEntry {
+                Quote quote;
+                std::chrono::steady_clock::time_point fetched_at;
+            };
+            std::unordered_map<Symbol, CacheEntry> cache_;
+
+            //We are going to perform real HTTP get request and return JSON content
+            //Empty string will be return in case of failure to establish api-request
+            std::string fetch_json(const Symbol& symbol);
+
+            //Parse the global quote Json block into fincore::Quote
+            std::optional<Quote> parse_quote(const std::string& json, const Symbol& symbol);
+
+            //JSON field helper
+            static bool extract_double(const std::string& json, const std::string& key, double& out);
+            static bool extract_string(const std::string& json, const std::string& key, std::string& out);
+        public:
+        //cache_ttl: is how long a quote is considered flesh before re-fetching
+        //default is 60 s is safe for the 25 req/day limit
+            explicit AlphaVantageClient(std::string api_key,
+                                        std::chrono::seconds cache_ttl = std::chrono::seconds{60});
+
+            ~AlphaVantageClient();
+
+            //Fetch the latest Global Quote for symbol
+            //Or returns nullopt on network error, API rate-limit, or parse failure
+            [[nodiscard]] std::optional<Quote> get_quote(const Symbol& symbol);
+
+            //Bypass the cache and always hit the network
+            [[nodiscard]] std::optional<Quote> get_quote_flesh(const Symbol& symbol);
+
+            //True if the last request hit the cache
+            [[nodiscard]] bool last_was_cached() const noexcept { return last_was_cached_;}
+
     };
-
-    Quote get_global_quote(const std::string& symbol) {
-        Quote quote;
-        quote.symbol = symbol;
-
-        if(symbol.empty()) {
-            std::cerr << "ERROR: symbol cannot be empty!\n";
-            return quote;
-        }
-
-        ///generating URL
-        std::string url = "https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol="
-            + symbol + "&apikey=" + api_key_;
-
-        //data fetch (through curl);
-        std::string json = execute_curl(url);
-
-        if (json.empty()) {
-            std::cerr << "ERROR: Alpha Vantage API return an error\n";
-            return quote;
-        }
-
-        //parsing JSON response;
-        parse_global_quote(json, quote);
-
-        return quote;
-    }
-
-private:
-    std::string execute_curl(const std::string& url) {
-        std::string command = "curl -s \"" + url + "\"";
-        FILE* pipe = popen(command.c_str(), "r");
-        if(!pipe) return "";
-
-        char buffer[4096];
-        std::string result;
-
-        while (fgets(buffer, sizeof(buffer), pipe) != NULL) {
-            result += buffer; //result accumulation
-        }
-        pclose(pipe);
-        return result;
-    }
-
-    void parse_global_quote(const std::string& json, Quote& quote) {
-        ///parsing data from the struct to .json (manually);
-        parse_json_field(json, "\"02. open\": \"", quote.open);
-        parse_json_field(json, "\"03. high\": \"", quote.high);
-        parse_json_field(json, "\"04. low\": \"", quote.low);
-        parse_json_field(json, "\"05. price\": \"", quote.price);
-
-        //parse volume
-        std::string volume_str;
-        if (parse_json_string_field(json, "\"06. volume\": \"", volume_str)) {
-            try {
-                quote.volume = std::stoll(volume_str);
-            } catch(const std::exception& e) { quote.volume = 0; }
-        }
-
-        //timestamp
-        parse_json_string_field(json, "\"07. latest trading day\": \"", quote.timestamp);
-
-        //previous close
-        ////parse_json_field(json, "\"08. previous close\": \"", quote.previous_close);
-
-        //Parse change
-        parse_json_field(json, "\"09. change\": \"", quote.change);
-
-        //change percent
-        std::string change_percent_str;
-        if (parse_json_string_field(json, "\"10. change percent\": \"", change_percent_str)) {
-            if (!change_percent_str.empty() && change_percent_str.back() == '%') {
-                change_percent_str.pop_back();
-            }
-            try { quote.change_percent = std::stod(change_percent_str); }
-            catch (const std::exception& e) { quote.change_percent = 0.0; }
-        }
-    }
-
-
-    bool parse_json_field(const std::string& json,
-            const std::string& field_name, double& value)
-    {
-        size_t pos = json.find(field_name);
-        if(pos == std::string::npos) return false;
-
-        size_t start = pos + field_name.length();
-        size_t end = json.find('"', start);
-        if (end == std::string::npos) return false;
-
-        std::string value_str = json.substr(start, end - start);
-        try {
-            value = std::stod(value_str);
-            return true;
-        } catch (const std::exception& e) {
-            return false;
-        }
-    }
-
-    bool parse_json_string_field(const std::string& json,
-            const std::string& field_name, std::string& value)
-    {
-        size_t pos = json.find(field_name);
-        if (pos == std::string::npos) return false;
-
-        size_t start = pos + field_name.length();
-        size_t end = json.find('"', start);
-
-        if(end == std::string::npos) return false;
-
-        value = json.substr(start, end - start);
-
-        return true;
-    }
-};
+}

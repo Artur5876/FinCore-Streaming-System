@@ -17,6 +17,7 @@ add_executable(market_pipeline
     src/api/alpha_vantage_client.cpp
     src/core/order_book.cpp
     src/storage/redis_client.cpp
+        include/api/alpha_vantage_client.hpp
 )
 
 # Include directories

@@ -39,7 +39,7 @@ struct Quote {
     Volume volume;
     double change;
     double change_percent;
-    std::string timestamp;
+    std::chrono::microseconds timestamp;
 };
 
     struct OrderBookSnapshot {
