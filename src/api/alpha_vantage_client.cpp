@@ -4,6 +4,7 @@
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
+#include <iomanip>
 
 namespace fincore {
     //---libcurl write callback---
@@ -191,12 +192,14 @@ namespace fincore {
         if (extract_string(json, "\"07. latest trading day\": \"", date_str)) {
             std::tm tm{};
             std::istringstream ss(date_str);
-            ss >> std::get_time(&tm, "%Y-%m-%d");
+            ss >> std::setw(4) >> tm.tm_year;
             if (!ss.fail()) {
                 tm.tm_hour = 0; tm.tm_min = 0; tm.tm_sec = 0;
-                std::time_t t = std::mktime(&tm);
-                auto sys = std::chrono::system_clock::from_time_t(t); // time_point
-                q.timestamp = std::chrono::duration_cast<std::chrono::microseconds>(sys.time_since_epoch());
+                std::time_t t = std::mktime(&tm);   // converts to local time (see note)
+                auto sys = std::chrono::system_clock::from_time_t(t);
+                q.timestamp = std::chrono::duration_cast<std::chrono::microseconds>(
+                                  sys.time_since_epoch()
+                              );
             }
         }
 
