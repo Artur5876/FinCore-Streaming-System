@@ -2,7 +2,7 @@
 
 // Fetches market quotes from the Alpha Vantage REST API.
 
-#include "/home/artur/Desktop/Financial-Core-Streaming-System/include/storage/tick.hpp"
+#include "core/types.hpp"
 #include <chrono>
 #include <optional>
 #include <string>

@@ -3,7 +3,7 @@
 //Asks stored ascending  (best ask = lowest price = begin())
 
 
-#include "/home/artur/Desktop/Financial-Core-Streaming-System/include/storage/tick.hpp"
+#include "core/types.hpp"
 #include <map>
 #include <stdexcept>
 
@@ -62,7 +62,7 @@ namespace fincore {
 
         //Snapshot
         //an OrderBookSnapshot that is suitable for persisting to TimescaleDB / Redis
-        [[nodiscard]] OrderBookSnapShot snapshot(TimePoint at = {}) const;
+        [[nodiscard]] OrderBookSnapshot snapshot(TimePoint at = {}) const;
 
         //read-only access to the maps that are serialised in Redis
         [[nodiscard]] const std::map<Price, Volume, std::greater <Price>>& bids() const noexcept{ return bids_; }

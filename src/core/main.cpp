@@ -1,7 +1,7 @@
 #include "api/alpha_vantage_client.hpp"
 #include "storage/redis_client.hpp"
 #include "core/order_book.hpp"
-#include "storage/tick.hpp"
+#include "core/types.hpp"
 
 #include <cstdlib>
 #include <iostream>

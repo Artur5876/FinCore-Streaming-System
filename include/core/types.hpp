@@ -1,7 +1,6 @@
 #pragma once
 
 #include <chrono>
-#include <compare>      // <=> for Candle / Quote ordering
 #include <cstdint>
 #include <optional>
 #include <ostream>

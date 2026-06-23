@@ -1,4 +1,4 @@
-#include "/home/artur/Desktop/Financial-Core-Streaming-System/include/api/alpha_vantage_client.hpp"
+#include "api/alpha_vantage_client.hpp"
 
 #include <curl/curl.h>
 #include <iostream>
@@ -182,8 +182,8 @@ namespace fincore {
         std::string pct_str;
         if (extract_string(json, "\"10. change percent\": \"", pct_str)) {
             if (!pct_str.empty() && pct_str.back() == '%') pct_str.pop_back();
-            try { q.change_percent = std::stod(pct_str); }
-            catch (...) { q.change_percent = 0.0; }
+            try { q.change_pct = std::stod(pct_str); }
+            catch (...) { q.change_pct = 0.0; }
         }
 
 
@@ -197,9 +197,9 @@ namespace fincore {
                 tm.tm_hour = 0; tm.tm_min = 0; tm.tm_sec = 0;
                 std::time_t t = std::mktime(&tm);   // converts to local time (see note)
                 auto sys = std::chrono::system_clock::from_time_t(t);
-                q.timestamp = std::chrono::duration_cast<std::chrono::microseconds>(
-                                  sys.time_since_epoch()
-                              );
+                q.timestamp = TimePoint{
+                    std::chrono::duration_cast<std::chrono::microseconds>(sys.time_since_epoch())
+                };
             }
         }
 

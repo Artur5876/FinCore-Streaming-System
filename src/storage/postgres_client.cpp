@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "/home/arturromanov/untitled/Financial-Core-Streaming-System/include/storage/postgres_client.hpp"
+#include "storage/postgres_client.hpp"
 
 #include <condition_variable>
 #include <mutex>
