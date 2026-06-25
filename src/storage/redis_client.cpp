@@ -6,14 +6,14 @@
 #include <unordered_map>
 #include <iterator>
 #include <sstream>
-#include "storage/redis_client.hpp"
+#include "/home/artur/Desktop/Financial-Core-Streaming-System/include/storage/redis_client.hpp"
 namespace fincore {
     //Redis_Client construction
-    RedisClient::RedisClient(const std::string& host, int port) : connection_string_("tcp://" + host + ";" + std::to_string(port)) {
+    RedisClient::RedisClient(const std::string& host, int port) : connection_string_("tcp://" + host + ":" + std::to_string(port)) {
         try {
             redis_ = std::make_unique<sw::redis::Redis>(connection_string_);
             redis_->ping();
-            std::cout << "[Redis] Connected to " << host << ";" << port << "\n";
+            std::cout << "[Redis] Connected to " << host << ":" << port << "\n";
         } catch(const sw::redis::Error& e) {
             std::cerr << "[Redis] Connection failed: " << e.what() << "\n";
             throw;

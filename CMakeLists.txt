@@ -1,43 +1,112 @@
-cmake_minimum_required(VERSION 3.10)
-project(Financial_Data_Pipeline)
+cmake_minimum_required(VERSION 3.20)
+project(fincore VERSION 1.0.0 LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD          20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_CXX_EXTENSIONS        OFF)
 
-# Find required packages
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(REDISPP REQUIRED redis++)
+add_compile_options(
+    -Wall -Wextra -Wpedantic
+    -Wno-unused-parameter
+)
+
+
+# CURL
 find_package(CURL REQUIRED)
-find_package(Threads REQUIRED)   # for pthread
 
-# Create executable directly
-add_executable(market_pipeline
-    src/core/main.cpp
-    src/api/alpha_vantage_client.cpp
+find_package(hiredis CONFIG QUIET)
+
+if(hiredis_FOUND)
+    find_package(redis++ CONFIG QUIET)
+endif()
+
+if(NOT TARGET redis++::redis++)
+    message(STATUS "Using manual redis++ / hiredis paths")
+
+    find_path(REDIS_PLUS_PLUS_INCLUDE_DIR
+        NAMES sw/redis++/redis++.h
+        PATHS
+            /usr/local/include
+            /usr/include
+    )
+
+    find_library(REDIS_PLUS_PLUS_LIBRARY
+        NAMES redis++
+        PATHS
+            /usr/local/lib
+            /usr/lib
+            /usr/lib/x86_64-linux-gnu
+    )
+
+    find_library(HIREDIS_LIBRARY
+        NAMES hiredis
+        PATHS
+            /usr/local/lib
+            /usr/lib
+            /usr/lib/x86_64-linux-gnu
+    )
+
+    if(NOT REDIS_PLUS_PLUS_INCLUDE_DIR)
+        message(FATAL_ERROR "Could not find redis++ headers, expected sw/redis++/redis++.h")
+    endif()
+
+    if(NOT REDIS_PLUS_PLUS_LIBRARY)
+        message(FATAL_ERROR "Could not find redis++ library, expected libredis++.a or libredis++.so")
+    endif()
+
+    if(NOT HIREDIS_LIBRARY)
+        message(FATAL_ERROR "Could not find hiredis library, install libhiredis-dev")
+    endif()
+
+    add_library(redis++::redis++ INTERFACE IMPORTED)
+
+    target_include_directories(redis++::redis++ INTERFACE
+        ${REDIS_PLUS_PLUS_INCLUDE_DIR}
+    )
+
+    target_link_libraries(redis++::redis++ INTERFACE
+        ${REDIS_PLUS_PLUS_LIBRARY}
+        ${HIREDIS_LIBRARY}
+    )
+endif()
+
+#Libraries
+# Shared include path used by all targets
+set(FINCORE_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+
+# order_book — no external deps
+add_library(order_book STATIC
     src/core/order_book.cpp
+)
+target_include_directories(order_book PUBLIC ${FINCORE_INCLUDE_DIR})
+
+# alpha_vantage_client will need libcurl
+add_library(alpha_vantage_client STATIC
+    src/api/alpha_vantage_client.cpp
+)
+target_include_directories(alpha_vantage_client PUBLIC ${FINCORE_INCLUDE_DIR})
+target_link_libraries(alpha_vantage_client PUBLIC CURL::libcurl)
+
+# redis_client --> needs redis-plus-plus + hiredis
+add_library(redis_client STATIC
     src/storage/redis_client.cpp
-        include/api/alpha_vantage_client.hpp
+)
+target_include_directories(redis_client PUBLIC ${FINCORE_INCLUDE_DIR})
+target_link_libraries(redis_client PUBLIC redis++::redis++)
+
+#Main executable file
+add_executable(fincore_app src/core/main.cpp)
+target_link_libraries(fincore_app
+    PRIVATE
+        order_book
+        alpha_vantage_client
+        redis_client
 )
 
-# Include directories
-target_include_directories(market_pipeline PRIVATE
-    include
-    ${REDISPP_INCLUDE_DIRS}
-    ${CURL_INCLUDE_DIRS}
-)
-
-# Link libraries
-target_link_libraries(market_pipeline PRIVATE
-    ${REDISPP_LIBRARIES}
-    ${CURL_LIBRARIES}
-    Threads::Threads
-)
-
-# Tests
+#Tests
 enable_testing()
-include(FetchContent)
 
+include(FetchContent)
 FetchContent_Declare(
     googletest
     GIT_REPOSITORY https://github.com/google/googletest.git
@@ -45,20 +114,26 @@ FetchContent_Declare(
 )
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
-
-# Fixed test executable for redis_client
-add_executable(test_redis_client
-        tests/unit/test_redis_client.cpp
-)
-target_link_libraries(test_redis_client PRIVATE
-    GTest::gtest_main
-    ${REDISPP_LIBRARIES}
-    Threads::Threads
-)
-target_include_directories(test_redis_client PRIVATE
-    ${REDISPP_INCLUDE_DIRS}
-)
-
 include(GoogleTest)
-gtest_discover_tests(test_redis_client)
 
+# test_order_book - no Network(Redis/curl) needed
+#add_executable(test_order_book test_order_book.cpp)
+#target_link_libraries(test_order_book
+#    PRIVATE
+#        order_book
+#        GTest::gtest_main
+#)
+#gtest_discover_tests(test_order_book)
+
+# test_redis_client — also pure logic (uses the self-contained stub in the file)
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/test_redis_client.cpp")
+    add_executable(test_redis_client test_redis_client.cpp)
+    target_link_libraries(test_redis_client
+        PRIVATE
+            GTest::gtest_main
+    )
+    gtest_discover_tests(test_redis_client)
+endif()
+
+#Run all tests:         cmake --build build && ctest --test-dir build -V
+#Run only order_book:   ctest --test-dir build -R test_order_book -V

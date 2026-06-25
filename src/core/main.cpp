@@ -1,7 +1,7 @@
-#include "api/alpha_vantage_client.hpp"
-#include "storage/redis_client.hpp"
-#include "core/order_book.hpp"
-#include "core/types.hpp"
+#include "/home/artur/Desktop/Financial-Core-Streaming-System/include/api/alpha_vantage_client.hpp"
+#include "/home/artur/Desktop/Financial-Core-Streaming-System/include/storage/redis_client.hpp"
+#include "/home/artur/Desktop/Financial-Core-Streaming-System/include/core/order_book.hpp"
+#include "/home/artur/Desktop/Financial-Core-Streaming-System/include/core/types.hpp"
 
 #include <cstdlib>
 #include <iostream>

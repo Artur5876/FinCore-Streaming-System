@@ -1,4 +1,4 @@
-#include "api/alpha_vantage_client.hpp"
+#include "/home/artur/Desktop/Financial-Core-Streaming-System/include/api/alpha_vantage_client.hpp"
 
 #include <curl/curl.h>
 #include <iostream>
@@ -78,7 +78,7 @@ namespace fincore {
     //---Network---
     std::string AlphaVantageClient::fetch_json(const Symbol& symbol) {
         const std::string url =
-            "https://www.aplhavantage.co/query"
+            "https://www.alphavantage.co/query"
             "?function=GLOBAL_QUOTE"
             "&symbol=" + symbol +
             "&apikey=" + api_key_;
