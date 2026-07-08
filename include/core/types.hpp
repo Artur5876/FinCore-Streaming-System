@@ -106,8 +106,8 @@ struct Quote {
         return !symbol.empty()
             && price  > 0.0
             && (high  == 0.0 || high  >= low)
-            && (open  == 0.0 || open  >  0.0)
-            && volume >= 0;
+            && (open  == 0.0 || open  >  0.0);
+            //&& volume >= 0;
     }
 
     //ordering by time.
