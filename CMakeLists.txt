@@ -94,10 +94,15 @@ add_library(redis_client STATIC
 target_include_directories(redis_client PUBLIC ${FINCORE_INCLUDE_DIR})
 target_link_libraries(redis_client PUBLIC redis++::redis++)
 
-#Main executable file
-add_executable(fincore_app src/core/main.cpp)
+# Main executable file
+add_executable(fincore_app
+        src/core/main.cpp
+        src/cli/fincore_cli.cpp
+        src/cli/process_metrics.cpp
+)
+
 target_link_libraries(fincore_app
-    PRIVATE
+        PRIVATE
         order_book
         alpha_vantage_client
         redis_client

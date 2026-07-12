@@ -243,7 +243,7 @@ void FinCoreCli::handle_lookup(const Args& args) const {
 
     const std::string symbol = normalize_symbol(args.front());
     const std::size_t count = args.size() == 2
-        ? z(args[1], "COUNT", 1, 100'000'000)
+        ? (args[1], "COUNT", 1, 100'000'000)
         : 1'000'000;
 
     if (!is_configured(symbol)) {
