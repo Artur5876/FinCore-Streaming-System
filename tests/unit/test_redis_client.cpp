@@ -1,31 +1,44 @@
-//Tests for Redis_Client logic (parsing, serialization)
-//
 //The tests logic is based on fake redis stub (no real Redis processing)
 //
+#include <gtest/gtest.h>
+
 #include <chrono>
-#include <map>
+#include <cstdint>
 #include <optional>
 #include <string>
-#include <unorderred_map>
+#include <string_view>
+#include <unordered_map>
 
 
 //re-implementation of the types needed for testing
 
 
 namespace fincore {
-    using TimePoint = std::chrono::time_point<std::chrono::system_clock,
-                                          std::chrono::microseconds>;
+    using TimePoint = std::chrono::time_point<
+        std::chrono::system_clock,
+        std::chrono::microseconds
+    >;
+
     using Symbol = std::string;
     using Price  = double;
     using Volume = uint64_t;
 
-    enum class Side : char { Bid = 'B', Ask = 'A', Unknown = 'U' };
+    enum class Side : char {
+        Bid     = 'B',
+        Ask     = 'A',
+        Unknown = 'U'
+    };
 
     inline std::string_view to_string(Side s) noexcept {
         switch (s) {
-            case Side::Bid: return "BID";
-            case Side::Ask: return "ASK";
-            default:        return "UNKNOWN";
+            case Side::Bid:
+                return "BID";
+
+            case Side::Ask:
+                return "ASK";
+
+            default:
+                return "UNKNOWN";
         }
     }
 
@@ -66,9 +79,12 @@ namespace fincore {
     //Simple logic helpers that help to extract data from Redis_Client. those methods are exactly what
     //Redis_Client does when serialising/desirialising, so we can test the logic without touching the network
 }
+
 namespace fincore::detail {
+
     //I will serialise a Quote into a flat string map (what hset receives)
-    std::unordered_map<std::string, std::string> quote_to_fields(const Quote& q) {
+    std::unordered_map<std::string, std::string>
+    quote_to_fields(const Quote& q) {
         return {
             {"price",      std::to_string(q.price)},
             {"open",       std::to_string(q.open)},
@@ -82,23 +98,44 @@ namespace fincore::detail {
     }
 
     //desirialising a string map back to Quote
-    std::optional<Quote> fields_to_quote(const Symbol& symbol,
-                                     const std::unordered_map<std::string, std::string>& fields)
-    {
-        if (fields.empty()) return std::nullopt;   // BUG FIX: was inverted in original
+    std::optional<Quote> fields_to_quote(
+        const Symbol& symbol,
+        const std::unordered_map<std::string, std::string>& fields
+    ) {
+        if (fields.empty()) {
+            return std::nullopt; // BUG FIX: was inverted in original
+        }
 
         auto get_double = [&](const std::string& key) -> double {
-            auto it = fields.find(key);
-            if (it == fields.end()) return 0.0;
-            try { return std::stod(it->second); } catch (...) { return 0.0; }
+            const auto it = fields.find(key);
+
+            if (it == fields.end()) {
+                return 0.0;
+            }
+
+            try {
+                return std::stod(it->second);
+            } catch (...) {
+                return 0.0;
+            }
         };
+
         auto get_uint64 = [&](const std::string& key) -> uint64_t {
-            auto it = fields.find(key);
-            if (it == fields.end()) return 0ULL;
-            try { return std::stoull(it->second); } catch (...) { return 0ULL; }
+            const auto it = fields.find(key);
+
+            if (it == fields.end()) {
+                return 0ULL;
+            }
+
+            try {
+                return std::stoull(it->second);
+            } catch (...) {
+                return 0ULL;
+            }
         };
 
         Quote q;
+
         q.symbol     = symbol;
         q.price      = get_double("price");
         q.open       = get_double("open");
@@ -107,21 +144,25 @@ namespace fincore::detail {
         q.volume     = get_uint64("volume");
         q.change_pct = get_double("change_pct");
 
-        if (auto it = fields.find("source"); it != fields.end())
+        if (const auto it = fields.find("source"); it != fields.end()) {
             q.source = it->second;
+        }
 
-        if (auto it = fields.find("timestamp"); it != fields.end()) {
+        if (const auto it = fields.find("timestamp"); it != fields.end()) {
             try {
-                int64_t us = std::stoll(it->second);
+                const int64_t us = std::stoll(it->second);
                 q.timestamp = TimePoint(std::chrono::microseconds(us));
-            } catch (...) {}
+            } catch (...) {
+                //Keep the default timestamp if the stored value is invalid.
+            }
         }
 
         return q;
     }
 
     //Serialise tick to fields
-    std::unordered_map<std::string, std::string> tick_to_fields(const Tick& t) {
+    std::unordered_map<std::string, std::string>
+    tick_to_fields(const Tick& t) {
         return {
             {"symbol",    t.symbol},
             {"price",     std::to_string(t.price)},
@@ -138,8 +179,9 @@ namespace fincore::detail {
 using namespace fincore;
 using namespace fincore::detail;
 
-TEST(QuotesSerde, RoundTrip_AllFields) {
+TEST(QuoteSerde, RoundTrip_AllFields) {
     Quote original;
+
     original.symbol     = "AAPL";
     original.price      = 189.75;
     original.open       = 188.00;
@@ -148,70 +190,103 @@ TEST(QuotesSerde, RoundTrip_AllFields) {
     original.volume     = 42'000'000ULL;
     original.change_pct = 0.93;
     original.source     = "ALPHA_VANTAGE";
-    original.timestamp  = TimePoint(std::chrono::microseconds(1'700'000'000'000'000LL));
+    original.timestamp  =
+        TimePoint(std::chrono::microseconds(1'700'000'000'000'000LL));
 
-    auto fields = quote_to_fields(original);
-    auto result = fields_to_quote("AAPL", fields);
+    const auto fields = quote_to_fields(original);
+    const auto result = fields_to_quote("AAPL", fields);
 
     ASSERT_TRUE(result.has_value());
-    EXPECT_EQ   (result->symbol,     "AAPL");
-    EXPECT_DOUBLE_EQ(result->price,  189.75);
-    EXPECT_DOUBLE_EQ(result->open,   188.00);
-    EXPECT_DOUBLE_EQ(result->high,   191.20);
-    EXPECT_DOUBLE_EQ(result->low,    187.50);
-    EXPECT_EQ   (result->volume,     42'000'000ULL);
-    EXPECT_NEAR (result->change_pct, 0.93, 1e-9);
-    EXPECT_EQ   (result->source,     "ALPHA_VANTAGE");
-    EXPECT_EQ   (result->timestamp,  original.timestamp);
+
+    EXPECT_EQ(result->symbol, "AAPL");
+    EXPECT_DOUBLE_EQ(result->price, 189.75);
+    EXPECT_DOUBLE_EQ(result->open, 188.00);
+    EXPECT_DOUBLE_EQ(result->high, 191.20);
+    EXPECT_DOUBLE_EQ(result->low, 187.50);
+    EXPECT_EQ(result->volume, 42'000'000ULL);
+    EXPECT_NEAR(result->change_pct, 0.93, 1e-9);
+    EXPECT_EQ(result->source, "ALPHA_VANTAGE");
+    EXPECT_EQ(result->timestamp, original.timestamp);
 }
 
 TEST(QuoteSerde, NoEmptyFields_ReturnValue) {
-    std::unorderred_map<std::string, std::string> fields{{"price", "100.0"}};
-    auto result = fields_to_quote("MSFT", fields);
+    std::unordered_map<std::string, std::string> fields{
+        {"price", "100.0"}
+    };
+
+    const auto result = fields_to_quote("MSFT", fields);
+
     EXPECT_TRUE(result.has_value());
+}
+
+TEST(QuoteSerde, EmptyFields_ReturnNullopt) {
+    const std::unordered_map<std::string, std::string> fields;
+
+    const auto result = fields_to_quote("MSFT", fields);
+
+    EXPECT_FALSE(result.has_value());
 }
 
 //Tests to validate the Quote struct
 TEST(QuoteValidation, Valid) {
     Quote q;
+
     q.symbol = "GOOG";
-    q.price = "142.0";
+    q.price = 142.0;
+
     EXPECT_TRUE(q.is_valid());
 }
 
 TEST(QuoteValidation, EmptySymbol_Invalid) {
     Quote q;
+
     q.price = 100.0;
+
     EXPECT_FALSE(q.is_valid());
 }
 
 TEST(QuoteValidation, ZeroPrice_Invalid) {
     Quote q;
+
     q.symbol = "GOOG";
-    q.price = "0.0";
+    q.price = 0.0;
+
+    EXPECT_FALSE(q.is_valid());
+}
+
+TEST(QuoteValidation, NegativePrice_Invalid) {
+    Quote q;
+
+    q.symbol = "GOOG";
+    q.price = -1.0;
+
     EXPECT_FALSE(q.is_valid());
 }
 
 //Tests for tick serialisation
 TEST(TickSerde, SideEncoding_Bid) {
     Tick t;
+
     t.symbol = "BTC-USD";
     t.price = 1.0;
     t.size = 1;
     t.side = Side::Bid;
 
-    auto fields = tick_to_fields(t);
+    const auto fields = tick_to_fields(t);
+
     EXPECT_EQ(fields.at("side"), "BID");
 }
 
 TEST(TickSerde, SideEncoding_Ask) {
     Tick t;
+
     t.symbol = "ETH-USD";
     t.price = 1.0;
     t.size = 1;
     t.side = Side::Ask;
 
-    auto fields = tick_to_fields(t);
+    const auto fields = tick_to_fields(t);
+
     EXPECT_EQ(fields.at("side"), "ASK");
 }
 
@@ -219,13 +294,55 @@ TEST(TickSerde, TimestampRoundTrip) {
     const int64_t us = 1'700'000'000'123'456LL;
 
     Tick t;
+
     t.symbol    = "AAPL";
     t.price     = 1.0;
     t.size      = 1;
     t.timestamp = TimePoint(std::chrono::microseconds(us));
 
-    auto fields = tick_to_fields(t);
+    const auto fields = tick_to_fields(t);
+
     EXPECT_EQ(std::stoll(fields.at("timestamp")), us);
+}
+
+//Tests to validate the Tick struct
+TEST(TickValidation, Valid) {
+    Tick t;
+
+    t.symbol = "AAPL";
+    t.price = 100.0;
+    t.size = 10;
+
+    EXPECT_TRUE(t.is_valid());
+}
+
+TEST(TickValidation, EmptySymbol_Invalid) {
+    Tick t;
+
+    t.price = 100.0;
+    t.size = 10;
+
+    EXPECT_FALSE(t.is_valid());
+}
+
+TEST(TickValidation, ZeroPrice_Invalid) {
+    Tick t;
+
+    t.symbol = "AAPL";
+    t.price = 0.0;
+    t.size = 10;
+
+    EXPECT_FALSE(t.is_valid());
+}
+
+TEST(TickValidation, ZeroSize_Invalid) {
+    Tick t;
+
+    t.symbol = "AAPL";
+    t.price = 100.0;
+    t.size = 0;
+
+    EXPECT_FALSE(t.is_valid());
 }
 
 //Side enum converter(helper)
@@ -238,25 +355,39 @@ TEST(SideEnum, ToString) {
 //TimePoint helper;
 TEST(TimePoint, ToUnixUs_RoundTrip) {
     const int64_t us = 1'715'000'000'000'000LL;
-    TimePoint tp(std::chrono::microseconds(us));
+
+    const TimePoint tp{
+        std::chrono::microseconds(us)
+    };
+
     EXPECT_EQ(to_unix_us(tp), us);
 }
 
 //Test some Quote and Tick naming conventions
 TEST(KeyHelpers, QuoteKey) {
     // Mirror of RedisClient::quote_key
-    auto quote_key = [](const Symbol& s) { return "quote:" + s; };
+    const auto quote_key = [](const Symbol& s) {
+        return "quote:" + s;
+    };
+
     EXPECT_EQ(quote_key("AAPL"), "quote:AAPL");
 }
 
 TEST(KeyHelpers, QuoteHistoryKey) {
-    auto quote_history_key = [](const Symbol& s) { return "quote_history:" + s; };
-    EXPECT_EQ(quote_history_key("AAPL"), "quote_history:AAPL");
+    const auto quote_history_key = [](const Symbol& s) {
+        return "quote_history:" + s;
+    };
+
+    EXPECT_EQ(
+        quote_history_key("AAPL"),
+        "quote_history:AAPL"
+    );
 }
 
 TEST(KeyHelpers, TickStreamKey) {
-    auto tick_stream_key = [](const Symbol& s) { return "ticks:" + s; };
+    const auto tick_stream_key = [](const Symbol& s) {
+        return "ticks:" + s;
+    };
+
     EXPECT_EQ(tick_stream_key("AAPL"), "ticks:AAPL");
 }
-
-

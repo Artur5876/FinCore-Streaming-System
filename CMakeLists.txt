@@ -94,6 +94,9 @@ add_library(redis_client STATIC
 target_include_directories(redis_client PUBLIC ${FINCORE_INCLUDE_DIR})
 target_link_libraries(redis_client PUBLIC redis++::redis++)
 
+
+
+
 # Main executable file
 add_executable(fincore_app
         src/core/main.cpp
@@ -122,7 +125,9 @@ FetchContent_MakeAvailable(googletest)
 include(GoogleTest)
 
 # test_order_book - no Network(Redis/curl) needed
-#add_executable(test_order_book test_order_book.cpp)
+#add_executable(test_order_book
+#    tests/test_order_book.cpp
+#)
 #target_link_libraries(test_order_book
 #    PRIVATE
 #        order_book
@@ -130,7 +135,17 @@ include(GoogleTest)
 #)
 #gtest_discover_tests(test_order_book)
 
-# test_redis_client — also pure logic (uses the self-contained stub in the file)
+add_executable(test_redis_client
+    tests/unit/test_redis_client.cpp
+)
+
+target_link_libraries(test_redis_client
+    PRIVATE
+        redis_client
+        GTest::gtest_main
+)
+
+# test_redis_client --  pure logic (uses the self-contained stub in the file)
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/test_redis_client.cpp")
     add_executable(test_redis_client test_redis_client.cpp)
     target_link_libraries(test_redis_client
