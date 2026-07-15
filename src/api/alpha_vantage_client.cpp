@@ -18,9 +18,11 @@ namespace fincore {
     }
 
     AlphaVantageClient::AlphaVantageClient(std::string api_key,
-                                       std::chrono::seconds cache_ttl)
+                                       std::chrono::seconds cache_ttl,
+                                       FetchFunction fetch_function)
     : api_key_(std::move(api_key))
     , cache_ttl_(cache_ttl)
+    , fetch_function_(fetch_function)
     {
         if (api_key_.empty())
             throw std::invalid_argument("AlphaVantageClient: api_key must not be empty");
@@ -37,23 +39,34 @@ namespace fincore {
 
 
     //---Public methods---
-    std::optional<Quote> AlphaVantageClient::get_quote_flesh(const Symbol& symbol) {
-        if (symbol.empty()) return std::nullopt;
-
+    std::optional<Quote>
+    AlphaVantageClient::get_quote_flesh(const Symbol& symbol)
+    {
         last_was_cached_ = false;
-        const std::string json = fetch_json(symbol);
-        if (json.empty()) return std::nullopt;
-
+        if (symbol.empty()) {
+            return std::nullopt;
+        }
+        const std::string json =
+            fetch_function_
+                ? fetch_function_(symbol)
+                : fetch_json(symbol);
+        if (json.empty()) {
+            return std::nullopt;
+        }
         auto result = parse_quote(json, symbol);
-        if (!result) return std::nullopt;
-
-
-        //Store in cache
-        cache_[symbol] = CacheEntry{*result, std::chrono::steady_clock::now()};
+        if (!result) {
+            return std::nullopt;
+        }
+        cache_[symbol] = CacheEntry{
+            *result,
+            std::chrono::steady_clock::now()
+        };
         return result;
     }
 
     std::optional<Quote> AlphaVantageClient::get_quote(const Symbol& symbol) {
+        last_was_cached_ = false;
+
         if(symbol.empty()) {
             std::cerr << "[AlphaVantage] symbol must not be empty!\n";
             return std::nullopt;
@@ -61,6 +74,7 @@ namespace fincore {
 
         //Check cache first
         auto it = cache_.find(symbol);
+
         if (it != cache_.end()) {
             auto age = std::chrono::steady_clock::now() - it->second.fetched_at;
             if (age < cache_ttl_) {

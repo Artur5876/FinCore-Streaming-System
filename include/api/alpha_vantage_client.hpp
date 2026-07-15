@@ -3,6 +3,8 @@
 // Fetches market quotes from the Alpha Vantage REST API.
 
 #include "/home/artur/Desktop/Financial-Core-Streaming-System/include/core/types.hpp"
+
+#include <functional>
 #include <chrono>
 #include <optional>
 #include <string>
@@ -11,10 +13,33 @@
 namespace fincore {
 
     class AlphaVantageClient {
+        public:
+            //fetch function holder for testing the API
+            using FetchFunction = std::function<std::string(const Symbol&)>;
+        //cache_ttl: is how long a quote is considered flesh before re-fetching
+        //default is 60 s is safe for the 25 req/day limit
+            explicit AlphaVantageClient(std::string api_key,
+                                        std::chrono::seconds cache_ttl = std::chrono::seconds{60},
+                                        FetchFunction fetch_function = {});
+
+            ~AlphaVantageClient();
+
+            //Fetch the latest Global Quote for symbol
+            //Or returns nullopt on network error, API rate-limit, or parse failure
+            [[nodiscard]] std::optional<Quote> get_quote(const Symbol& symbol);
+
+            //Bypass the cache and always hit the network
+            [[nodiscard]] std::optional<Quote> get_quote_flesh(const Symbol& symbol);
+
+            //True if the last request hit the cache
+            [[nodiscard]] bool last_was_cached() const noexcept { return last_was_cached_;}
+
+
         private:
             std::string             api_key_;
             std::chrono::seconds    cache_ttl_;
             bool                    last_was_cached_{false};
+            FetchFunction           fetch_function_;
 
             struct CacheEntry {
                 Quote quote;
@@ -32,23 +57,5 @@ namespace fincore {
             //JSON field helper
             static bool extract_double(const std::string& json, const std::string& key, double& out);
             static bool extract_string(const std::string& json, const std::string& key, std::string& out);
-        public:
-        //cache_ttl: is how long a quote is considered flesh before re-fetching
-        //default is 60 s is safe for the 25 req/day limit
-            explicit AlphaVantageClient(std::string api_key,
-                                        std::chrono::seconds cache_ttl = std::chrono::seconds{60});
-
-            ~AlphaVantageClient();
-
-            //Fetch the latest Global Quote for symbol
-            //Or returns nullopt on network error, API rate-limit, or parse failure
-            [[nodiscard]] std::optional<Quote> get_quote(const Symbol& symbol);
-
-            //Bypass the cache and always hit the network
-            [[nodiscard]] std::optional<Quote> get_quote_flesh(const Symbol& symbol);
-
-            //True if the last request hit the cache
-            [[nodiscard]] bool last_was_cached() const noexcept { return last_was_cached_;}
-
-    };
+            };
 }
