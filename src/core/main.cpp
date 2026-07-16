@@ -1,6 +1,6 @@
-#include "/home/artur/Desktop/Financial-Core-Streaming-System/include/api/alpha_vantage_client.hpp"
-#include "/home/artur/Desktop/Financial-Core-Streaming-System/include/cli/fincore_cli.hpp"
-#include "/home/artur/Desktop/Financial-Core-Streaming-System/include/storage/redis_client.hpp"
+#include "api/alpha_vantage_client.hpp"
+#include "cli/fincore_cli.hpp"
+#include "storage/redis_client.hpp"
 
 #include <chrono>
 #include <cstdlib>

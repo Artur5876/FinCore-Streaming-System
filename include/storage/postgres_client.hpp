@@ -6,7 +6,7 @@
 //   Facade      - PostgresClient owns the pool and wires the repos together
 //
 #pragma once
-#include "/home/artur/Desktop/Financial-Core-Streaming-System/include/core/types.hpp"
+#include "core/types.hpp"
 #include "core/types.hpp"
 #include <chrono>
 #include <functional>

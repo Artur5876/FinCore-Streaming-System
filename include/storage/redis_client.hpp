@@ -1,10 +1,10 @@
 #pragma once
-#include "/home/artur/Desktop/Financial-Core-Streaming-System/include/api/alpha_vantage_client.hpp"
+#include "api/alpha_vantage_client.hpp"
 #include <hiredis/hiredis.h>
 #include <string>
 #include <iostream>
 #include <cstdlib>
-#include "/home/artur/Desktop/Financial-Core-Streaming-System/include/core/types.hpp"
+#include "core/types.hpp"
 #include <map>
 #include <sw/redis++/redis++.h>
 namespace fincore {

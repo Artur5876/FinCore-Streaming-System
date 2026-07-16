@@ -72,7 +72,7 @@ endif()
 
 #Libraries
 # Shared include path used by all targets
-set(FINCORE_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+set(FINCORE_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
 # order_book — no external deps
 add_library(order_book STATIC

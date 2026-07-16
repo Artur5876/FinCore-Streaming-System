@@ -1,4 +1,4 @@
-#include "/home/artur/Desktop/Financial-Core-Streaming-System/include/cli/process_metrics.hpp"
+#include "cli/process_metrics.hpp"
 
 #include <algorithm>
 #include <cmath>

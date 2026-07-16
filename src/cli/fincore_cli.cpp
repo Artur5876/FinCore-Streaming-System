@@ -1,4 +1,4 @@
-#include "/home/artur/Desktop/Financial-Core-Streaming-System/include/cli/fincore_cli.hpp"
+#include "cli/fincore_cli.hpp"
 
 #include <algorithm>
 #include <cctype>

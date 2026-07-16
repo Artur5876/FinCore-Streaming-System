@@ -1,4 +1,4 @@
-#include "/home/artur/Desktop/Financial-Core-Streaming-System/include/core/order_book.hpp"
+#include "core/order_book.hpp"
 #include <stdexcept>
 
 namespace fincore {

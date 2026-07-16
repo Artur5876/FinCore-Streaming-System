@@ -6,7 +6,7 @@
 #include <unordered_map>
 #include <iterator>
 #include <sstream>
-#include "/home/artur/Desktop/Financial-Core-Streaming-System/include/storage/redis_client.hpp"
+#include "storage/redis_client.hpp"
 namespace fincore {
     //Redis_Client construction
     RedisClient::RedisClient(const std::string& host, int port) : connection_string_("tcp://" + host + ":" + std::to_string(port)) {

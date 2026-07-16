@@ -1,4 +1,4 @@
-#include "/home/artur/Desktop/Financial-Core-Streaming-System/include/api/alpha_vantage_client.hpp"
+#include "api/alpha_vantage_client.hpp"
 
 #include <curl/curl.h>
 #include <iostream>

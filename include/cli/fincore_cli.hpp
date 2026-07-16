@@ -1,10 +1,10 @@
 #pragma once
 
-#include "/home/artur/Desktop/Financial-Core-Streaming-System/include/api/alpha_vantage_client.hpp"
-#include "/home/artur/Desktop/Financial-Core-Streaming-System/include/cli/process_metrics.hpp"
-#include "/home/artur/Desktop/Financial-Core-Streaming-System/include/core/order_book.hpp"
-#include "/home/artur/Desktop/Financial-Core-Streaming-System/include/core/types.hpp"
-#include "/home/artur/Desktop/Financial-Core-Streaming-System/include/storage/redis_client.hpp"
+#include "api/alpha_vantage_client.hpp"
+#include "cli/process_metrics.hpp"
+#include "core/order_book.hpp"
+#include "core/types.hpp"
+#include "storage/redis_client.hpp"
 
 #include <iosfwd>
 #include <string>
