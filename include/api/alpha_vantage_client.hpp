@@ -2,7 +2,7 @@
 
 // Fetches market quotes from the Alpha Vantage REST API.
 
-#include "/home/artur/Desktop/Financial-Core-Streaming-System/include/core/types.hpp"
+#include "/home/artur/Desktop/FinCore-Streaming-System/include/core/types.hpp"
 
 #include <functional>
 #include <chrono>
