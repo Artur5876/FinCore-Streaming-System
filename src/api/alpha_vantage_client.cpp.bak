@@ -84,7 +84,7 @@ namespace fincore {
         }
 
         //if its not in cache
-        return get_quote_fresh(symbol);
+        return get_quote_flesh(symbol);
     }
 
 

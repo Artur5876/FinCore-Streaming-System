@@ -212,8 +212,261 @@ TEST(AlphaVantageClientTest, InvalidRequiredNumberReturnsNullopt)
 //
 TEST(AlphaVantageClientTest, InvalidVolumeBecomesZero)
 {
+    constexpr const char* json = R"json(
+    {
+        "Global Quote": {
+            "02. open": "100.25",
+            "03. high": "105.75",
+            "04. low": "99.50",
+            "05. price": "104.50",
+            "06. volume": "invalid"
+        }
+    }
+    )json";
 
+    AlphaVantageClient client(
+        "test-key",
+        std::chrono::seconds{60},
+        [](const Symbol&) {
+            return std::string{json};
+        });
+
+    const auto quote = client.get_quote("IBM");
+
+    ASSERT_TRUE(quote.has_value());
+    EXPECT_EQ(quote->volume, Volume{0});
 }
+
+TEST(AlphaVantageClientTest, InvalidChangePercentBecomesZero)
+{
+    constexpr const char* json = R"json(
+    {
+        "Global Quote": {
+            "02. open": "100.25",
+            "03. high": "105.75",
+            "04. low": "99.50",
+            "05. price": "104.50",
+            "10. change percent": "invalid%"
+        }
+    }
+    )json";
+
+    AlphaVantageClient client(
+        "test-key",
+        std::chrono::seconds{60},
+        [](const Symbol&) {
+            return std::string{json};
+        });
+
+    const auto quote = client.get_quote("IBM");
+
+    ASSERT_TRUE(quote.has_value());
+    EXPECT_DOUBLE_EQ(quote->change_pct, 0.0);
+}
+
+TEST(AlphaVantageClientTest, ParsesChangePercentWithoutPercentSign)
+{
+    constexpr const char* json = R"json(
+    {
+        "Global Quote": {
+            "02. open": "100.25",
+            "03. high": "105.75",
+            "04. low": "99.50",
+            "05. price": "104.50",
+            "10. change percent": "-1.75"
+        }
+    }
+    )json";
+
+    AlphaVantageClient client(
+        "test-key",
+        std::chrono::seconds{60},
+        [](const Symbol&) {
+            return std::string{json};
+        });
+
+    const auto quote = client.get_quote("IBM");
+
+    ASSERT_TRUE(quote.has_value());
+    EXPECT_DOUBLE_EQ(quote->change_pct, -1.75);
+}
+
+
+//Cache Behaviour
+//
+TEST(AlphaVantageClientTest, SecondRequestUsesCache)
+{
+    int fetch_count = 0;
+    AlphaVantageClient client (
+        "test-key",
+        std::chrono::seconds{3600},
+        [&](const Symbol&) {
+            ++fetch_count; return std::string{VALID_QUOTE_JSON};
+        });
+    const auto first = client.get_quote("IBM");
+
+    ASSERT_TRUE(first.has_value());
+    EXPECT_EQ(fetch_count, 1);
+    EXPECT_FALSE(first.last_was_cached());
+
+    const auto second = client.get_quote("IBM");
+
+    ASSERT_TRUE(second.has_value());
+    EXPECT_EQ(fetch_count, 1);
+    EXPECT_TRUE(client.last_was_cached());
+
+    EXPECT_DOUBLE_EQ(first->price, second->price);
+}
+
+TEST(AlphaVantageClientTest, DifferentSymbolHaveDifferentCacheEntries)
+{
+    int fetch_count = 0;
+
+    AlphaVantageClient client(
+        "test-key",
+        std::chrono::seconds{3600},
+        [&](const Symbol&) {
+            ++fetch_count;
+            return std::string{VALID_QUOTE_JSON};
+        });
+
+    ASSERT_TRUE(client.get_quote("IBM").has_value());
+    EXPECT_FALSE(client.last_was_cached());
+
+    ASSERT_TRUE(client.get_quote("AAPL").has_value());
+    EXPECT_FALSE(client.last_was_cached());
+
+    EXPECT_EQ(fetch_count, 2);
+
+    ASSERT_TRUE(client.get_quote("IBM").has_value());
+    EXPECT_TRUE(client.last_was_cached());
+
+    ASSERT_TRUE(client.get_quote("AAPL").has_value());
+    EXPECT_TRUE(client.last_was_cached());
+
+    EXPECT_EQ(fetch_count, 2);
+}
+
+TEST(AlphaVantageClientTest, ZeroTtlAlwaysFetches)
+{
+    int fetch_count = 0;
+
+    AlphaVantageClient client(
+        "test-key",
+        std::chrono::seconds{0},
+        [&](const Symbol&) {
+            ++fetch_count;
+            return std::string{VALID_QUOTE_JSON};
+        });
+
+    ASSERT_TRUE(client.get_quote("IBM").has_value());
+    EXPECT_FALSE(client.last_was_cached());
+
+    ASSERT_TRUE(client.get_quote("IBM").has_value());
+    EXPECT_FALSE(client.last_was_cached());
+
+    EXPECT_EQ(fetch_count, 2);
+}
+
+TEST(AlphaVantageClientTest, FreshRequestBypassesCache)
+{
+    int fetch_count = 0;
+
+    AlphaVantageClient client(
+        "test-key",
+        std::chrono::seconds{3600},
+        [&](const Symbol&) {
+            ++fetch_count;
+
+            if (fetch_count == 1) {
+                return std::string{VALID_QUOTE_JSON};
+            }
+
+            return std::string{SECOND_QUOTE_JSON};
+        });
+
+    const auto first = client.get_quote("IBM");
+
+    ASSERT_TRUE(first.has_value());
+    EXPECT_DOUBLE_EQ(first->price, 104.50);
+    EXPECT_EQ(fetch_count, 1);
+
+    const auto cached = client.get_quote("IBM");
+
+    ASSERT_TRUE(cached.has_value());
+    EXPECT_DOUBLE_EQ(cached->price, 104.50);
+    EXPECT_TRUE(client.last_was_cached());
+    EXPECT_EQ(fetch_count, 1);
+
+    const auto fresh = client.get_quote_flesh("IBM");
+
+    ASSERT_TRUE(fresh.has_value());
+    EXPECT_DOUBLE_EQ(fresh->price, 205.00);
+    EXPECT_FALSE(client.last_was_cached());
+    EXPECT_EQ(fetch_count, 2);
+
+    // The fresh response should replace the old cached response.
+    const auto updated_cache = client.get_quote("IBM");
+
+    ASSERT_TRUE(updated_cache.has_value());
+    EXPECT_DOUBLE_EQ(updated_cache->price, 205.00);
+    EXPECT_TRUE(client.last_was_cached());
+    EXPECT_EQ(fetch_count, 2);
+}
+
+TEST(AlphaVantageClientTest, FailedResponseIsNotCached)
+{
+    int fetch_count = 0;
+
+    AlphaVantageClient client(
+        "test-key",
+        std::chrono::seconds{3600},
+        [&](const Symbol&) {
+            ++fetch_count;
+
+            if (fetch_count == 1) {
+                return std::string{"invalid JSON"};
+            }
+
+            return std::string{VALID_QUOTE_JSON};
+        });
+
+    EXPECT_FALSE(client.get_quote("IBM").has_value());
+    EXPECT_FALSE(client.last_was_cached());
+    EXPECT_EQ(fetch_count, 1);
+
+    const auto second = client.get_quote("IBM");
+
+    ASSERT_TRUE(second.has_value());
+    EXPECT_FALSE(client.last_was_cached());
+    EXPECT_EQ(fetch_count, 2);
+
+    const auto third = client.get_quote("IBM");
+
+    ASSERT_TRUE(third.has_value());
+    EXPECT_TRUE(client.last_was_cached());
+    EXPECT_EQ(fetch_count, 2);
+}
+
+TEST(AlphaVantageClientTest, EmptySymbolResetsLastCachedStatus)
+{
+    AlphaVantageClient client(
+        "test-key",
+        std::chrono::seconds{3600},
+        [](const Symbol&) {
+            return std::string{VALID_QUOTE_JSON};
+        });
+
+    ASSERT_TRUE(client.get_quote("IBM").has_value());
+    ASSERT_TRUE(client.get_quote("IBM").has_value());
+    ASSERT_TRUE(client.last_was_cached());
+
+    EXPECT_FALSE(client.get_quote("").has_value());
+    EXPECT_FALSE(client.last_was_cached());
+}
+
+
+
 
 }
 }

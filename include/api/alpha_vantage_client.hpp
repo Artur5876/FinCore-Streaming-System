@@ -28,7 +28,7 @@ namespace fincore {
             [[nodiscard]] std::optional<Quote> get_quote(const Symbol& symbol);
 
             //Bypass the cache and always hit the network
-            [[nodiscard]] std::optional<Quote> get_quote_flesh(const Symbol& symbol);
+            [[nodiscard]] std::optional<Quote> get_quote_fresh(const Symbol& symbol);
 
             //True if the last request hit the cache
             [[nodiscard]] bool last_was_cached() const noexcept { return last_was_cached_;}
