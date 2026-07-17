@@ -132,12 +132,88 @@ TEST(AlphaVantageClientTest, EmptyResponseReturnsNullopt)
         });
 
     const auto quote = client.get_quote();
+
     EXPECT_FALSE(quote.has_value());
     EXPECT_FALSE(client.last_was_cached());
 }
 
 
+//Some required fields
 
+TEST(AlphaVantageClientTest, MissingPriceReturnsNullopt)
+{
+    constexpr const char* json = R"json(
+    {
+        "Global Quote": {
+            "02. open": "100.25",
+            "03. high": "105.75",
+            "04. low": "99.50"
+        }
+    }
+    )json";
+
+    AlphaVantageClient client(
+        "test-key",
+        std::chrono::seconds{60},
+        [](const Symbol&) {
+            return std::string{json};
+        });
+
+    EXPECT_FALSE(client.get_quote("IBM").has_value());
+}
+
+TEST(AlphaVantageClientTest, MissingOpenReturnsNullopt)
+{
+    constexpr const char* json = R"json(
+    {
+        "Global Quote": {
+            "03. high": "105.75",
+            "04. low": "99.50",
+            "05. price": "104.50"
+        }
+    }
+    )json";
+
+    AlphaVantageClient client(
+        "test-key",
+        std::chrono::seconds{60},
+        [](const Symbol&) {
+            return std::string{json};
+        });
+
+    EXPECT_FALSE(client.get_quote("IBM").has_value());
+}
+
+TEST(AlphaVantageClientTest, InvalidRequiredNumberReturnsNullopt)
+{
+    constexpr const char* json = R"json(
+    {
+        "Global Quote": {
+            "02. open": "not-a-number",
+            "03. high": "105.75",
+            "04. low": "99.50",
+            "05. price": "104.50"
+        }
+    }
+    )json";
+
+    AlphaVantageClient client(
+        "test-key",
+        std::chrono::seconds{60},
+        [](const Symbol&) {
+            return std::string{json};
+        });
+
+    EXPECT_FALSE(client.get_quote("IBM").has_value());
+}
+
+
+//Optional fields
+//
+TEST(AlphaVantageClientTest, InvalidVolumeBecomesZero)
+{
+
+}
 
 }
 }
