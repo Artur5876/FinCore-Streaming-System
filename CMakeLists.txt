@@ -182,7 +182,7 @@ gtest_discover_tests(alpha_vantage_client_test)
 add_executable(test_redis_client
     tests/unit/test_redis_client.cpp
 )
-jkkk
+
 target_link_libraries(test_redis_client
     PRIVATE
         redis_client

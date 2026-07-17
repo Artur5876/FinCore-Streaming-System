@@ -307,7 +307,7 @@ TEST(AlphaVantageClientTest, SecondRequestUsesCache)
 
     ASSERT_TRUE(first.has_value());
     EXPECT_EQ(fetch_count, 1);
-    EXPECT_FALSE(first.last_was_cached());
+    EXPECT_FALSE(client.last_was_cached());
 
     const auto second = client.get_quote("IBM");
 
@@ -398,7 +398,7 @@ TEST(AlphaVantageClientTest, FreshRequestBypassesCache)
     EXPECT_TRUE(client.last_was_cached());
     EXPECT_EQ(fetch_count, 1);
 
-    const auto fresh = client.get_quote_flesh("IBM");
+    const auto fresh = client.get_quote_fresh("IBM");
 
     ASSERT_TRUE(fresh.has_value());
     EXPECT_DOUBLE_EQ(fresh->price, 205.00);
