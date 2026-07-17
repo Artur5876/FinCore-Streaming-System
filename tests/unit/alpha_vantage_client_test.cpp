@@ -66,7 +66,7 @@ Test (AlphaVantageClientTest, ParsingValidQuote)
     int fetch_count =0;
     AlphaVantageClient client(
         "test_api_key",
-        std::chrono::std::seconds{60},
+        std::chrono::seconds{60},
         [&](const Symbol& symbol) {
             ++fetch_count;
             EXPECT_EQ(symbol, "IBM");
@@ -89,7 +89,54 @@ Test (AlphaVantageClientTest, ParsingValidQuote)
     EXPECT_FALSE(client.last_was_cached());
 }
 
-TEST
+TEST(AlphaVantageClientTest, UsesRequestedSymbol)
+{
+    AlphaVantageClient client(
+        "test-key",
+        std::chrono::seconds{60},
+        [](const Symbol&) {
+            return std::string(VALID_QUOTE_JSON);
+        });
+
+    //Im trying to reassign requested symbol to another one
+    const auto quote = client.get_quote("AAPL");
+    ASSERT_TRUE(quote.has_value());
+    EXPECT_EQ(quote->symbol, "AAPL");
+}
+
+TEST(AlphaVantageClientTest, EmptySymbolDoesNotCallFetcher)
+{
+    int fetch_count = 0;
+    AlphaVantageClient client(
+        "test-key",
+        std::chrono::seconds{60};
+        [&](const Symbol&) {
+            ++fetch_count;
+            return std::string{VALID_QUOTE_JSON};
+        }
+
+        const auto quote = client.get_quote("");
+
+        EXPECT_FALSE(quote.has_value());
+        EXPECT_EQ(fetch_count, 0);
+        EXPECT_FALSE(client.last_was_cached());
+}
+
+TEST(AlphaVantageClientTest, EmptyResponseReturnsNullopt)
+{
+    AlphaVantageClient(
+        "test-key",
+        std::chrono::seconds{60},
+        [](const Symbol&) {
+            return std::string{};
+        });
+
+    const auto quote = client.get_quote();
+    EXPECT_FALSE(quote.has_value());
+    EXPECT_FALSE(client.last_was_cached());
+}
+
+
 
 
 }
