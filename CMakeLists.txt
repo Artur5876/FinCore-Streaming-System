@@ -111,6 +111,17 @@ target_link_libraries(fincore_app
         redis_client
 )
 
+
+
+
+
+
+
+
+
+
+
+
 #Tests
 enable_testing()
 
@@ -120,8 +131,11 @@ FetchContent_Declare(
     GIT_REPOSITORY https://github.com/google/googletest.git
     GIT_TAG        v1.14.0
 )
+
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+
 FetchContent_MakeAvailable(googletest)
+
 include(GoogleTest)
 
 # test_order_book - no Network(Redis/curl) needed
@@ -135,6 +149,36 @@ include(GoogleTest)
 #)
 #gtest_discover_tests(test_order_book)
 
+
+#test orderbook
+add_executable(order_book_test
+    tests/unit/order_book_test.cpp
+)
+
+target_link_libraries(order_book_test
+    PRIVATE
+        order_book
+        GTest::gtest_main
+)
+
+gtest_discover_tests(order_book_test)
+
+
+#test alpha_vantage
+add_executable(alpha_vantage_client_test
+    tests/unit/alpha_vantage_client_test.cpp
+)
+
+target_link_libraries(alpha_vantage_client_test
+    PRIVATE
+        alpha_vantage_client
+        GTest::gtest_main
+)
+
+gtest_discover_tests(alpha_vantage_client_test)
+
+
+#redis tests
 add_executable(test_redis_client
     tests/unit/test_redis_client.cpp
 )
@@ -144,6 +188,10 @@ target_link_libraries(test_redis_client
         redis_client
         GTest::gtest_main
 )
+
+gtest_discover_tests(test_redis_client)
+
+
 
 # test_redis_client --  pure logic (uses the self-contained stub in the file)
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/test_redis_client.cpp")

@@ -61,7 +61,7 @@ TEST(AlphaVantageClientTest, AcceptNonEmptyApiKey)
 
 //Basic quote parsing through the public api
 //
-Test (AlphaVantageClientTest, ParsingValidQuote)
+TEST(AlphaVantageClientTest, ParsingValidQuote)
 {
     int fetch_count =0;
     AlphaVantageClient client(
@@ -109,11 +109,11 @@ TEST(AlphaVantageClientTest, EmptySymbolDoesNotCallFetcher)
     int fetch_count = 0;
     AlphaVantageClient client(
         "test-key",
-        std::chrono::seconds{60};
+        std::chrono::seconds{60},
         [&](const Symbol&) {
             ++fetch_count;
             return std::string{VALID_QUOTE_JSON};
-        }
+        });
 
         const auto quote = client.get_quote("");
 
@@ -124,14 +124,14 @@ TEST(AlphaVantageClientTest, EmptySymbolDoesNotCallFetcher)
 
 TEST(AlphaVantageClientTest, EmptyResponseReturnsNullopt)
 {
-    AlphaVantageClient(
+    AlphaVantageClient client(
         "test-key",
         std::chrono::seconds{60},
         [](const Symbol&) {
             return std::string{};
         });
 
-    const auto quote = client.get_quote();
+    const auto quote = client.get_quote("IBM");
 
     EXPECT_FALSE(quote.has_value());
     EXPECT_FALSE(client.last_was_cached());

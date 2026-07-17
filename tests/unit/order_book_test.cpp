@@ -12,7 +12,7 @@
 namespace fincore {
 namespace {
 
-class OrderBookTest {
+class OrderBookTest : public ::testing::Test {
 protected:
     OrderBook book{"BTC-USD"};
 };
@@ -20,19 +20,19 @@ protected:
 
 //Empty Book tests
 
-TEST(OrderBookTest, EmptyBookHasNoBestPrices)
+TEST_F(OrderBookTest, EmptyBookHasNoBestPrices)
 {
     EXPECT_FALSE(book.best_bid().has_value());
     EXPECT_FALSE(book.best_ask().has_value());
 }
 
-TEST(OrderBookTest, EmptyBookHasNoMidPriceOrSpread)
+TEST_F(OrderBookTest, EmptyBookHasNoMidPriceOrSpread)
 {
     EXPECT_FALSE(book.mid_price().has_value());
     EXPECT_FALSE(book.spread().has_value());
 }
 
-TEST(OrderBookTest, EmptyBookHasZeroVolumesAndImbalance)
+TEST_F(OrderBookTest, EmptyBookHasZeroVolumesAndImbalance)
 {
     EXPECT_EQ(book.total_bid_volume(), Volume{0});
     EXPECT_EQ(book.total_ask_volume(), Volume{0});
@@ -41,7 +41,7 @@ TEST(OrderBookTest, EmptyBookHasZeroVolumesAndImbalance)
 
 
 //Bid Mutations
-TEST(OrderBookTest, SetBidAddsBidLevel)
+TEST_F(OrderBookTest, SetBidAddsBidLevel)
 {
     book.set_bid(100.0, 25);
 
@@ -50,7 +50,7 @@ TEST(OrderBookTest, SetBidAddsBidLevel)
     EXPECT_EQ(book.total_bid_volume(), Volume{25});
 }
 
-TEST(OrderBookTest, SetBidUpdatesExistingLevel)
+TEST_F(OrderBookTest, SetBidUpdatesExistingLevel)
 {
     book.set_bid(100.0, 25);
     book.set_bid(100.0, 40);
@@ -60,7 +60,7 @@ TEST(OrderBookTest, SetBidUpdatesExistingLevel)
     EXPECT_EQ(book.total_bid_volume(), Volume{40});
 }
 
-TEST(OrderBookTest, BestBidReturnsHighestBid)
+TEST_F(OrderBookTest, BestBidReturnsHighestBid)
 {
     book.set_bid(99.0, 10);
     book.set_bid(101.0, 20);
@@ -70,7 +70,7 @@ TEST(OrderBookTest, BestBidReturnsHighestBid)
     EXPECT_DOUBLE_EQ(*book.best_bid(), 101.0);
 }
 
-TEST(OrderBookTest, ZeroBidVolumeRemovesLevel)
+TEST_F(OrderBookTest, ZeroBidVolumeRemovesLevel)
 {
     book.set_bid(100.0, 25);
     book.set_bid(100.0, 0);
@@ -79,7 +79,7 @@ TEST(OrderBookTest, ZeroBidVolumeRemovesLevel)
     EXPECT_EQ(book.total_bid_volume(), Volume{0});
 }
 
-TEST(OrderBookTest, RemovingBestBidRevealsNextBestBid)
+TEST_F(OrderBookTest, RemovingBestBidRevealsNextBestBid)
 {
     book.set_bid(101.0, 10);
     book.set_bid(100.0, 20);
@@ -92,7 +92,7 @@ TEST(OrderBookTest, RemovingBestBidRevealsNextBestBid)
 
 
 // Ask Mutations
-TEST(OrderBookTest, SetAskAddsAskLevel)
+TEST_F(OrderBookTest, SetAskAddsAskLevel)
 {
     book.set_ask(101.0, 25);
 
@@ -101,7 +101,7 @@ TEST(OrderBookTest, SetAskAddsAskLevel)
     EXPECT_EQ(book.total_ask_volume(), Volume{25});
 }
 
-TEST(OrderBookTest, SetAskUpdatesExistingLevel)
+TEST_F(OrderBookTest, SetAskUpdatesExistingLevel)
 {
     book.set_ask(101.0, 25);
     book.set_ask(101.0, 50);
@@ -111,7 +111,7 @@ TEST(OrderBookTest, SetAskUpdatesExistingLevel)
     EXPECT_EQ(book.total_ask_volume(), Volume{50});
 }
 
-TEST(OrderBookTest, BestAskReturnsLowestAsk)
+TEST_F(OrderBookTest, BestAskReturnsLowestAsk)
 {
     book.set_ask(103.0, 10);
     book.set_ask(101.0, 20);
@@ -121,7 +121,7 @@ TEST(OrderBookTest, BestAskReturnsLowestAsk)
     EXPECT_DOUBLE_EQ(*book.best_ask(), 101.0);
 }
 
-TEST(OrderBookTest, ZeroAskVolumeRemovesLevel)
+TEST_F(OrderBookTest, ZeroAskVolumeRemovesLevel)
 {
     book.set_ask(101.0, 25);
     book.set_ask(101.0, 0);
@@ -130,7 +130,7 @@ TEST(OrderBookTest, ZeroAskVolumeRemovesLevel)
     EXPECT_EQ(book.total_ask_volume(), Volume{0});
 }
 
-TEST(OrderBookTest, RemovingBestAskRevealsNextBestAsk)
+TEST_F(OrderBookTest, RemovingBestAskRevealsNextBestAsk)
 {
     book.set_ask(101.0, 10);
     book.set_ask(102.0, 20);
@@ -143,27 +143,27 @@ TEST(OrderBookTest, RemovingBestAskRevealsNextBestAsk)
 
 //
 // Input Validation
-TEST(OrderBookTest, SetBidRejectsZeroPrice)
+TEST_F(OrderBookTest, SetBidRejectsZeroPrice)
 {
     EXPECT_THROW(book.set_bid(0.0, 10), std::invalid_argument);
 }
 
-TEST(OrderBookTest, SetBidRejectsNegativePrice)
+TEST_F(OrderBookTest, SetBidRejectsNegativePrice)
 {
     EXPECT_THROW(book.set_bid(-1.0, 10), std::invalid_argument);
 }
 
-TEST(OrderBookTest, SetAskRejectsZeroPrice)
+TEST_F(OrderBookTest, SetAskRejectsZeroPrice)
 {
     EXPECT_THROW(book.set_ask(0.0, 10), std::invalid_argument);
 }
 
-TEST(OrderBookTest, SetAskRejectsNegativePrice)
+TEST_F(OrderBookTest, SetAskRejectsNegativePrice)
 {
     EXPECT_THROW(book.set_ask(-1.0, 10), std::invalid_argument);
 }
 
-TEST(OrderBookTest, InvalidMutationDoesNotChangeExistingBook)
+TEST_F(OrderBookTest, InvalidMutationDoesNotChangeExistingBook)
 {
     book.set_bid(100.0, 20);
     book.set_ask(101.0, 30);
@@ -182,7 +182,7 @@ TEST(OrderBookTest, InvalidMutationDoesNotChangeExistingBook)
 
 //
 // Replace operations
-TEST(OrderBookTest, ReplaceBidsRemovesOldLevels)
+TEST_F(OrderBookTest, ReplaceBidsRemovesOldLevels)
 {
     book.set_bid(90.0, 100);
 
@@ -199,7 +199,7 @@ TEST(OrderBookTest, ReplaceBidsRemovesOldLevels)
     EXPECT_EQ(book.total_bid_volume(), Volume{60});
 }
 
-TEST(OrderBookTest, ReplaceAsksRemovesOldLevels)
+TEST_F(OrderBookTest, ReplaceAsksRemovesOldLevels)
 {
     book.set_ask(110.0, 100);
 
@@ -216,7 +216,7 @@ TEST(OrderBookTest, ReplaceAsksRemovesOldLevels)
     EXPECT_EQ(book.total_ask_volume(), Volume{60});
 }
 
-TEST(OrderBookTest, ReplaceBidsIgnoresZeroVolumeLevels)
+TEST_F(OrderBookTest, ReplaceBidsIgnoresZeroVolumeLevels)
 {
     const std::map<Price, Volume> replacement{
         {100.0, 10},
@@ -231,7 +231,7 @@ TEST(OrderBookTest, ReplaceBidsIgnoresZeroVolumeLevels)
     EXPECT_EQ(book.total_bid_volume(), Volume{30});
 }
 
-TEST(OrderBookTest, ReplaceAsksIgnoresZeroVolumeLevels)
+TEST_F(OrderBookTest, ReplaceAsksIgnoresZeroVolumeLevels)
 {
     const std::map<Price, Volume> replacement{
         {100.0, 0},
@@ -246,7 +246,7 @@ TEST(OrderBookTest, ReplaceAsksIgnoresZeroVolumeLevels)
     EXPECT_EQ(book.total_ask_volume(), Volume{30});
 }
 
-TEST(OrderBookTest, ReplacingWithEmptyMapsClearsLevels)
+TEST_F(OrderBookTest, ReplacingWithEmptyMapsClearsLevels)
 {
     book.set_bid(100.0, 10);
     book.set_ask(101.0, 20);
@@ -260,7 +260,7 @@ TEST(OrderBookTest, ReplacingWithEmptyMapsClearsLevels)
 
 //
 // Mid-price and spread
-TEST(OrderBookTest, CalculatesMidPrice)
+TEST_F(OrderBookTest, CalculatesMidPrice)
 {
     book.set_bid(100.0, 10);
     book.set_ask(102.0, 20);
@@ -269,7 +269,7 @@ TEST(OrderBookTest, CalculatesMidPrice)
     EXPECT_DOUBLE_EQ(*book.mid_price(), 101.0);
 }
 
-TEST(OrderBookTest, CalculatesSpread)
+TEST_F(OrderBookTest, CalculatesSpread)
 {
     book.set_bid(100.0, 10);
     book.set_ask(102.0, 20);
@@ -278,7 +278,7 @@ TEST(OrderBookTest, CalculatesSpread)
     EXPECT_DOUBLE_EQ(*book.spread(), 2.0);
 }
 
-TEST(OrderBookTest, MidPriceAndSpreadRequireBothSides)
+TEST_F(OrderBookTest, MidPriceAndSpreadRequireBothSides)
 {
     book.set_bid(100.0, 10);
 
@@ -292,7 +292,7 @@ TEST(OrderBookTest, MidPriceAndSpreadRequireBothSides)
     EXPECT_FALSE(book.spread().has_value());
 }
 
-TEST(OrderBookTest, CrossedBookProducesNegativeSpread)
+TEST_F(OrderBookTest, CrossedBookProducesNegativeSpread)
 {
     book.set_bid(102.0, 10);
     book.set_ask(101.0, 20);
@@ -306,7 +306,7 @@ TEST(OrderBookTest, CrossedBookProducesNegativeSpread)
 
 //
 // Aggregate volumes
-TEST(OrderBookTest, CalculatesTotalBidVolume)
+TEST_F(OrderBookTest, CalculatesTotalBidVolume)
 {
     book.set_bid(100.0, 10);
     book.set_bid(99.0, 20);
@@ -315,7 +315,7 @@ TEST(OrderBookTest, CalculatesTotalBidVolume)
     EXPECT_EQ(book.total_bid_volume(), Volume{60});
 }
 
-TEST(OrderBookTest, CalculatesTotalAskVolume)
+TEST_F(OrderBookTest, CalculatesTotalAskVolume)
 {
     book.set_ask(101.0, 15);
     book.set_ask(102.0, 25);
@@ -325,7 +325,7 @@ TEST(OrderBookTest, CalculatesTotalAskVolume)
 }
 
 // Imbalance Check
-TEST(OrderBookTest, CalculatesBalancedImbalance)
+TEST_F(OrderBookTest, CalculatesBalancedImbalance)
 {
     book.set_bid(100.0, 100);
     book.set_ask(101.0, 100);
@@ -333,7 +333,7 @@ TEST(OrderBookTest, CalculatesBalancedImbalance)
     EXPECT_DOUBLE_EQ(book.imbalance(), 0.0);
 }
 
-TEST(OrderBookTest, CalculatesPositiveImbalance)
+TEST_F(OrderBookTest, CalculatesPositiveImbalance)
 {
     book.set_bid(100.0, 300);
     book.set_ask(101.0, 100);
@@ -342,7 +342,7 @@ TEST(OrderBookTest, CalculatesPositiveImbalance)
     EXPECT_NEAR(book.imbalance(), 0.5, 1e-12);
 }
 
-TEST(OrderBookTest, CalculatesNegativeImbalance)
+TEST_F(OrderBookTest, CalculatesNegativeImbalance)
 {
     book.set_bid(100.0, 100);
     book.set_ask(101.0, 300);
@@ -351,14 +351,14 @@ TEST(OrderBookTest, CalculatesNegativeImbalance)
     EXPECT_NEAR(book.imbalance(), -0.5, 1e-12);
 }
 
-TEST(OrderBookTest, BidOnlyBookHasMaximumPositiveImbalance)
+TEST_F(OrderBookTest, BidOnlyBookHasMaximumPositiveImbalance)
 {
     book.set_bid(100.0, 100);
 
     EXPECT_DOUBLE_EQ(book.imbalance(), 1.0);
 }
 
-TEST(OrderBookTest, AskOnlyBookHasMaximumNegativeImbalance)
+TEST_F(OrderBookTest, AskOnlyBookHasMaximumNegativeImbalance)
 {
     book.set_ask(101.0, 100);
 
@@ -367,7 +367,7 @@ TEST(OrderBookTest, AskOnlyBookHasMaximumNegativeImbalance)
 
 
 // Clear(Removal)
-TEST(OrderBookTest, ClearRemovesAllLevels)
+TEST_F(OrderBookTest, ClearRemovesAllLevels)
 {
     book.set_bid(100.0, 10);
     book.set_bid(99.0, 20);
@@ -388,7 +388,7 @@ TEST(OrderBookTest, ClearRemovesAllLevels)
 
 // j
 // Snapshot Check
-TEST(OrderBookTest, SnapshotContainsCurrentBookValues)
+TEST_F(OrderBookTest, SnapshotContainsCurrentBookValues)
 {
     book.set_bid(100.0, 100);
     book.set_bid(99.0, 50);
@@ -411,7 +411,7 @@ TEST(OrderBookTest, SnapshotContainsCurrentBookValues)
     EXPECT_NE(snapshot.snapshot_time, TimePoint{});
 }
 
-TEST(OrderBookTest, EmptySnapshotUsesZeroForUnavailableValues)
+TEST_F(OrderBookTest, EmptySnapshotUsesZeroForUnavailableValues)
 {
     const auto snapshot = book.snapshot();
 
@@ -426,7 +426,7 @@ TEST(OrderBookTest, EmptySnapshotUsesZeroForUnavailableValues)
     EXPECT_DOUBLE_EQ(snapshot.imbalance, 0.0);
 }
 
-TEST(OrderBookTest, SnapshotUsesProvidedTimestamp)
+TEST_F(OrderBookTest, SnapshotUsesProvidedTimestamp)
 {
     const TimePoint timestamp{
         std::chrono::duration_cast<TimePoint::duration>(
