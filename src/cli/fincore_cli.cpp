@@ -64,6 +64,39 @@ void populate_book_from_quote(OrderBook& book, const Quote& quote) {
 
 } // namespace
 
+
+//Construction of function wrappers (for unit-tests)
+CliServices make_cli_services(AlphaVantageClient& av_client, RedisClient& redis) {
+    CliServices services;
+
+    services.get_quote = [&av_client](const Symbol& symbol) {
+        return av_client.get_quote(symbol);
+    };
+
+    services.last_was_cached = [&av_client] {
+        return av_client.last_was_cached();
+    };
+
+    services.redis_is_connected = [&redis]{
+        return redis.is_connected();
+    };
+
+    services.store_quote = [&redis] (const Symbol& symbol,
+                                    const Quote& quote)
+    {
+        return redis.store_quote(symbol, quote);
+    };
+
+    services.update_order_book = [&redis](const Symbol& symbol,
+                                        const std::map<Price, Volume>& bids,
+                                        const std::map<Price, Volume>& asks)
+    {
+        return update_order_book_checked(redis, symbol, bids, asks);
+    };
+
+    return services;
+}
+
 FinCoreCli::FinCoreCli(AlphaVantageClient& av_client,
                        RedisClient& redis,
                        std::vector<std::string> symbols,
