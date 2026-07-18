@@ -103,8 +103,20 @@ FinCoreCli::FinCoreCli(AlphaVantageClient& av_client,
                        int default_poll_seconds,
                        std::istream& in,
                        std::ostream& out)
-    : av_client_(av_client),
-      redis_(redis),
+    : FinCoreCli(
+        make_cli_services(av_client, redis),
+        std::move(symbols),
+        default_poll_seconds,
+        in,
+        out){}
+
+
+FinCoreCli::FinCoreCli(CliServices services,
+                       std::vector<std::string> symbols,
+                       int default_poll_seconds,
+                       std::istream& in,
+                       std::ostream& out)
+    : services_(std::move(services)),
       symbols_(std::move(symbols)),
       default_poll_seconds_(default_poll_seconds),
       in_(in),
@@ -406,7 +418,7 @@ void FinCoreCli::handle_redis(const Args& args) const {
         throw std::invalid_argument("usage: redis status");
     }
 
-    out_ << (redis_.is_connected()
+    out_ << (services_.redis_is_connected()
         ? "[OK] Redis is connected\n"
         : "[ERROR] Redis is disconnected\n");
 }
@@ -449,9 +461,9 @@ bool FinCoreCli::fetch_symbol(const std::string& raw_symbol,
 
     try {
         const auto api_started = Clock::now();
-        auto maybe_quote = av_client_.get_quote(symbol);
+        auto maybe_quote = services_.get_quote(symbol);
         metrics.api_us = elapsed_us(api_started);
-        metrics.api_cached = av_client_.last_was_cached();
+        metrics.api_cached = services_.last_was_cached();
 
         if (!maybe_quote) {
             metrics.total_us = elapsed_us(total_started);
@@ -464,11 +476,10 @@ bool FinCoreCli::fetch_symbol(const std::string& raw_symbol,
             }
             return false;
         }
-
         const Quote& quote = *maybe_quote;
 
         const auto redis_quote_started = Clock::now();
-        metrics.redis_quote_stored = redis_.store_quote(symbol, quote);
+        metrics.redis_quote_stored = services_.store_quote(symbol, quote);
         metrics.redis_quote_us = elapsed_us(redis_quote_started);
 
         auto& book = books_.at(symbol);
@@ -483,8 +494,11 @@ bool FinCoreCli::fetch_symbol(const std::string& raw_symbol,
             book.asks().begin(), book.asks().end());
 
         const auto redis_book_started = Clock::now();
-        metrics.redis_book_stored = update_order_book_checked(
-            redis_, symbol, bids_map, asks_map);
+        metrics.redis_book_stored = services_.update_order_book(
+                                                symbol,
+                                                bids_map,
+                                                asks_map);
+
         metrics.redis_book_us = elapsed_us(redis_book_started);
 
         metrics.success = metrics.redis_quote_stored
@@ -518,7 +532,7 @@ bool FinCoreCli::fetch_symbol(const std::string& raw_symbol,
 }
 
 void FinCoreCli::fetch_all(bool print_data, bool print_metrics) {
-    if (!redis_.is_connected()) {
+    if (!services_.redis_is_connected()) {
         out_ << "[WARN] Redis is disconnected; writes may fail.\n";
     }
 

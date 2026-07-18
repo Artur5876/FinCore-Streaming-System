@@ -7,9 +7,9 @@
 #include "storage/redis_client.hpp"
 
 #include <functional>
-#include <optional>
-#include <map>
 #include <iosfwd>
+#include <map>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -23,21 +23,34 @@ struct CliServices {
 
     std::function<bool()> redis_is_connected;
 
-    std::function<bool(const Symbol&, const Quote&)> store_quote;
+    std::function<bool(
+        const Symbol&,
+        const Quote&)> store_quote;
 
     std::function<bool(
-            const Symbol&,
-            const std::map<Price, Volume>&,
-            const std::map<Price, Volume>&)> update_order_book;
+        const Symbol&,
+        const std::map<Price, Volume>&,
+        const std::map<Price, Volume>&)> update_order_book;
 };
+
 class FinCoreCli {
 public:
-    FinCoreCli(AlphaVantageClient& av_client,
-               RedisClient& redis,
-               std::vector<std::string> symbols,
-               int default_poll_seconds,
-               std::istream& in,
-               std::ostream& out);
+    // Production constructor.
+    FinCoreCli(
+        AlphaVantageClient& av_client,
+        RedisClient& redis,
+        std::vector<std::string> symbols,
+        int default_poll_seconds,
+        std::istream& in,
+        std::ostream& out);
+
+    // Unit-test constructor.
+    FinCoreCli(
+        CliServices services,
+        std::vector<std::string> symbols,
+        int default_poll_seconds,
+        std::istream& in,
+        std::ostream& out);
 
     int run();
 
@@ -58,24 +71,34 @@ private:
     void handle_redis(const Args& args) const;
     void handle_stats(const Args& args);
 
-    bool fetch_symbol(const std::string& raw_symbol,
-                      bool print_data,
-                      bool print_metrics);
+    bool fetch_symbol(
+        const std::string& raw_symbol,
+        bool print_data,
+        bool print_metrics);
+
     void fetch_all(bool print_data, bool print_metrics);
 
-    [[nodiscard]] bool is_configured(const std::string& symbol) const;
-    [[nodiscard]] static Args tokenize(const std::string& line);
-    [[nodiscard]] static std::string normalize_symbol(std::string symbol);
-    [[nodiscard]] static std::size_t parse_number(const std::string& text,
-                                                  const char* name,
-                                                  std::size_t minimum,
-                                                  std::size_t maximum);
+    [[nodiscard]] bool is_configured(
+        const std::string& symbol) const;
 
-    AlphaVantageClient& av_client_;
-    RedisClient& redis_;
+    [[nodiscard]] static Args tokenize(
+        const std::string& line);
+
+    [[nodiscard]] static std::string normalize_symbol(
+        std::string symbol);
+
+    [[nodiscard]] static std::size_t parse_number(
+        const std::string& text,
+        const char* name,
+        std::size_t minimum,
+        std::size_t maximum);
+
+    CliServices services_;
+
     std::vector<std::string> symbols_;
     std::unordered_map<std::string, OrderBook> books_;
     std::unordered_set<std::string> books_with_data_;
+
     int default_poll_seconds_;
     std::istream& in_;
     std::ostream& out_;
@@ -83,4 +106,4 @@ private:
     SessionStats stats_;
 };
 
-}
+} // namespace fincore::cli
