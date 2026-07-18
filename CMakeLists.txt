@@ -83,6 +83,7 @@ target_include_directories(order_book PUBLIC ${FINCORE_INCLUDE_DIR})
 # alpha_vantage_client will need libcurl
 add_library(alpha_vantage_client STATIC
     src/api/alpha_vantage_client.cpp
+        tests/unit/process_metrics_test.cpp
 )
 target_include_directories(alpha_vantage_client PUBLIC ${FINCORE_INCLUDE_DIR})
 target_link_libraries(alpha_vantage_client PUBLIC CURL::libcurl)
