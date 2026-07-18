@@ -6,6 +6,9 @@
 #include "core/types.hpp"
 #include "storage/redis_client.hpp"
 
+#include <functional>
+#include <optional>
+#include <map>
 #include <iosfwd>
 #include <string>
 #include <unordered_map>
@@ -14,6 +17,19 @@
 
 namespace fincore::cli {
 
+struct CliServices {
+    std::function<std::optional<Quote>(const Symbol&)> get_quote;
+    std::function<bool()> last_was_cached;
+
+    std::function<bool()> redis_is_connected;
+
+    std::function<bool(const Symbol&, const Quote&)> store_quote;
+
+    std::function<bool(
+            const Symbol&,
+            const std::map<Price, Volume>&,
+            const std::map<Price, Volume>&)> update_order_book;
+};
 class FinCoreCli {
 public:
     FinCoreCli(AlphaVantageClient& av_client,
