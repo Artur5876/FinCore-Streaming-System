@@ -80,10 +80,21 @@ add_library(order_book STATIC
 )
 target_include_directories(order_book PUBLIC ${FINCORE_INCLUDE_DIR})
 
+
+# process_metrics — Linux process/resource measurements
+add_library(process_metrics STATIC
+        src/cli/process_metrics.cpp
+)
+
+target_include_directories(process_metrics
+        PUBLIC
+        ${FINCORE_INCLUDE_DIR}
+)
+
 # alpha_vantage_client will need libcurl
 add_library(alpha_vantage_client STATIC
     src/api/alpha_vantage_client.cpp
-        tests/unit/process_metrics_test.cpp
+        #tests/unit/process_metrics_test.cpp
 )
 target_include_directories(alpha_vantage_client PUBLIC ${FINCORE_INCLUDE_DIR})
 target_link_libraries(alpha_vantage_client PUBLIC CURL::libcurl)
@@ -102,7 +113,6 @@ target_link_libraries(redis_client PUBLIC redis++::redis++)
 add_executable(fincore_app
         src/core/main.cpp
         src/cli/fincore_cli.cpp
-        src/cli/process_metrics.cpp
 )
 
 target_link_libraries(fincore_app
@@ -110,6 +120,7 @@ target_link_libraries(fincore_app
         order_book
         alpha_vantage_client
         redis_client
+        process_metrics
 )
 
 
@@ -139,16 +150,6 @@ FetchContent_MakeAvailable(googletest)
 
 include(GoogleTest)
 
-# test_order_book - no Network(Redis/curl) needed
-#add_executable(test_order_book
-#    tests/test_order_book.cpp
-#)
-#target_link_libraries(test_order_book
-#    PRIVATE
-#        order_book
-#        GTest::gtest_main
-#)
-#gtest_discover_tests(test_order_book)
 
 
 #test orderbook
@@ -163,6 +164,20 @@ target_link_libraries(order_book_test
 )
 
 gtest_discover_tests(order_book_test)
+
+
+#test process_metrics
+add_executable(process_metrics_test
+        tests/unit/process_metrics_test.cpp
+)
+
+target_link_libraries(process_metrics_test
+        PRIVATE
+        process_metrics
+        GTest::gtest_main
+)
+gtest_discover_tests(process_metrics_test)
+
 
 
 #test alpha_vantage
@@ -194,15 +209,15 @@ gtest_discover_tests(test_redis_client)
 
 
 
-# test_redis_client --  pure logic (uses the self-contained stub in the file)
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/test_redis_client.cpp")
-    add_executable(test_redis_client test_redis_client.cpp)
-    target_link_libraries(test_redis_client
-        PRIVATE
-            GTest::gtest_main
-    )
-    gtest_discover_tests(test_redis_client)
-endif()
+## test_redis_client --  pure logic (uses the self-contained stub in the file)
+#if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/test_redis_client.cpp")
+#    add_executable(test_redis_client test_redis_client.cpp)
+#    target_link_libraries(test_redis_client
+#        PRIVATE
+#            GTest::gtest_main
+#    )
+#    gtest_discover_tests(test_redis_client)
+#endif()
 
 #Run all tests:         cmake --build build && ctest --test-dir build -V
 #Run only order_book:   ctest --test-dir build -R test_order_book -V
