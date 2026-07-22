@@ -1,5 +1,7 @@
 #include "cli/fincore_cli.hpp"
 
+#include <gtest/gtest.h>
+
 #include <functional>
 #include <map>
 #include <optional>
@@ -138,7 +140,7 @@ namespace fincore
                 std::string::npos);
 
             EXPECT_NE(output.find("fincore>"), std::string::npos);
-            EXPECT_NE(output.find("Bye.", std::string::npos));
+            EXPECT_NE(output.find("Bye."), std::string::npos);
         }
 
 
@@ -255,7 +257,7 @@ namespace fincore
         {
             FakeBackend backend;
 
-            const std::string output run_cli(
+            const std::string output = run_cli(
                 backend,
                 "redis ping\nexit\n");
 

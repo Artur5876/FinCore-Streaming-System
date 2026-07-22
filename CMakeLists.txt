@@ -106,21 +106,32 @@ add_library(redis_client STATIC
 target_include_directories(redis_client PUBLIC ${FINCORE_INCLUDE_DIR})
 target_link_libraries(redis_client PUBLIC redis++::redis++)
 
-
-
-
-# Main executable file
-add_executable(fincore_app
-        src/core/main.cpp
-        src/cli/fincore_cli.cpp
+#fincore_cli processing as application workflow
+add_library(fincore_cli STATIC
+    src/cli/fincore_cli.cpp
 )
 
-target_link_libraries(fincore_app
-        PRIVATE
+target_include_directories(fincore_cli
+    PUBLIC
+        ${FINCORE_INCLUDE_DIR}
+)
+
+target_link_libraries (fincore_cli
+    PUBLIC
         order_book
         alpha_vantage_client
         redis_client
         process_metrics
+)
+
+# Main executable file
+add_executable(fincore_app
+        src/core/main.cpp
+)
+
+target_link_libraries(fincore_app
+        PRIVATE
+            fincore_cli
 )
 
 
@@ -178,6 +189,18 @@ target_link_libraries(process_metrics_test
 )
 gtest_discover_tests(process_metrics_test)
 
+
+#test fincore_cli
+add_executable(fincore_cli_test
+    tests/unit/fincore_cli_test.cpp)
+
+target_link_libraries(fincore_cli_test
+    PRIVATE
+        fincore_cli
+        GTest::gtest_main
+)
+
+gtest_discover_tests(fincore_cli_test)
 
 
 #test alpha_vantage
